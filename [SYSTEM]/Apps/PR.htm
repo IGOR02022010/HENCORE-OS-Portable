@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 
+ <div class="container">
+
+    <div class="controls">
+
+        <!-- Выбор размера сетки -->
+        <label style="color:#ccc;">Размер сетки:</label>
+        <select id="gridSizeSelect" style="padding: 6px; margin-right: 10px;">
+		    <option value="8">8×8</option>
+            <option value="16">16×16</option>
+            <option value="17">17×17</option>
+            <option value="18">18×18</option>
+            <option value="19">19×19</option>
+            <option value="20">20×20</option>
+            <option value="21">21×21</option>
+            <option value="22">22×22</option>
+            <option value="23">23×23</option>
+            <option value="24">24×24</option>
+            <option value="25">25×25</option>
+            <option value="26">26×26</option>
+            <option value="27">27×27</option>
+            <option value="28">28×28</option>
+            <option value="29">29×29</option>
+            <option value="30">30×30</option>
+            <option value="31">31×31</option>
+            <option value="32" selected>32×32</option>
+
+        </select>
+
+        <input type="file" id="fileInput" accept=".png,.jpg,.jpeg" style="display: none;">
+        <button type="button" onclick="document.getElementById('fileInput').click()">Открыть файл</button>
+        <button type="button" onclick="saveImage()">Сохранить как PNG</button>
+        <button type="button" onclick="clearCanvas()">Очистить</button>
+
+        <!-- Цвет и прозрачность -->
+        <span style="color:#ccc; margin-left: 15px;">Цвет:</span>
+        <input type="color" id="colorPicker" value="#FF0000" style="margin-left: 5px;">
+
+        <span style="color:#ccc; margin-left: 10px;">Прозрачность:</span>
+        <input type="range" id="alphaSlider" min="0" max="1" step="0.01" value="1" style="margin-left: 5px; width: 100px;">
+        <span id="alphaValue" style="color:#ccc; font-size: 0.9em; margin-left: 5px;">1.00</span>
+
+        <button type="button" onclick="setTransparent()">Прозрачный</button>
+
+        <!-- Заливка -->
+        <button type="button" onclick="toggleFillMode()" id="fillButton" style="margin-left: 15px; padding: 6px 12px;">Заливка: ВЫКЛ</button>
+    </div>
+
+    <div class="pixel-grid" id="pixelGrid"></div>
+</div>
+
+<style>
+    body {
+        background: #222;
+        font-family: sans-serif;
+        margin: 0;
+        padding: 10px;
+    }
+    .container {
+        max-width: 600px;
+        margin: auto;
+    }
+    h1 {
+        text-align: center;
+        color: white;
+        margin-bottom: 10px;
+    }
+    .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        background: #333;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    button {
+        padding: 8px 12px;
+        cursor: pointer;
+        background: #444;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+    }
+    button:hover {
+        background: #555;
+    }
+    .pixel-grid {
+        display: grid;
+        place-items: center;
+        width: 100%;
+        /* Фиксируем квадратный контейнер под текущий размер сетки */
+        aspect-ratio: 1 / 1;
+        background-color: #888;  
+        border: 2px solid #555;
+        box-sizing: border-box;
+        overflow: hidden;  
+    }
+    .pixel {
+         
+        width: 1em;
+        height: 1em;
+        margin: 0;
+        padding: 0;
+        border: none;
+         
+        transition: background-color 0.1s;
+        box-sizing: border-box;
+    }
+    .pixel:hover {
+        opacity: 0.8;
+    }
+</style>
+
+<script>
+    let gridSize = 32;
+    // Храним отдельно RGB и Alpha для корректной работы прозрачности
+    let currentR = 255, currentG = 0, currentB = 0;
+    let currentAlpha = 1.0;
+
+    let pixels = []; // 2D массив: pixels[y][x] = rgba или null
+    let isFillMode = false;
+
+    // Инициализация
+    function init() {
+        const select = document.getElementById('gridSizeSelect');
+        select.addEventListener('change', (e) => {
+            gridSize = Number(e.target.value);
+            clearCanvas();
+        });
+
+        document.getElementById('colorPicker').addEventListener('input', (e) => {
+            const hex = e.target.value;
+            currentR = parseInt(hex.slice(1,3), 16);
+            currentG = parseInt(hex.slice(3,5), 16);
+            currentB = parseInt(hex.slice(5,7), 16);
+            updateColorFromInputs();
+        });
+        document.getElementById('alphaSlider').addEventListener('input', (e) => {
+            currentAlpha = Number(e.target.value);
+            document.getElementById('alphaValue').textContent = currentAlpha.toFixed(2);
+            updateColorFromInputs();
+        });
+
+        // Обработчик загрузки файла
+        document.getElementById('fileInput').addEventListener('change', handleFileLoad);
+
+        createPixelGrid();
+    }
+
+    function updateColorFromInputs() {
+        // Формируем rgba строку с актуальными значениями
+        currentColor = `rgba(${currentR}, ${currentG}, ${currentB}, ${currentAlpha})`;
+    }
+
+    function toggleFillMode() {
+        isFillMode = !isFillMode;
+        const btn = document.getElementById('fillButton');
+        btn.textContent = isFillMode ? 'Заливка: ВКЛ' : 'Заливка: ВЫКЛ';
+        btn.style.background = isFillMode ? '#5a3' : '#444';
+    }
+
+    function setTransparent() {
+        currentAlpha = 0;
+        document.getElementById('alphaSlider').value = '0';
+        document.getElementById('alphaValue').textContent = '0.00';
+        updateColorFromInputs();
+    }
+
+    // Создание сетки
+    function createPixelGrid() {
+        const grid = document.getElementById('pixelGrid');
+        // Динамически задаем количество колонок — сетка подстраивается под размер
+        grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+        grid.innerHTML = '';
+
+        pixels = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                pixel.dataset.x = x;
+                pixel.dataset.y = y;
+
+                pixel.addEventListener('click', () => handlePixelClick(x, y, pixel));
+
+                grid.appendChild(pixel);
+            }
+        }
+    }
+
+    function handlePixelClick(x, y, pixel) {
+        if (isFillMode) {
+            floodFill(x, y);
+        } else {
+            pixels[y][x] = currentColor;
+            pixel.style.backgroundColor = currentColor;
+        }
+    }
+
+    // Flood Fill (заливка)
+    function floodFill(startX, startY) {
+        const startColor = pixels[startY][startX];
+        if (startColor === currentColor) return; // ничего не меняем
+
+        const stack = [[startX, startY]];
+        while (stack.length > 0) {
+            const [x, y] = stack.pop();
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) continue;
+            if (pixels[y][x] === currentColor) continue;
+
+            // Если стартовый пиксель был прозрачным, заливаем только прозрачные
+            if (startColor === null && pixels[y][x] !== null) continue;
+            // Если стартовый был цветным, заливаем только такой же цвет
+            if (startColor !== null && pixels[y][x] !== startColor) continue;
+
+            pixels[y][x] = currentColor;
+
+            stack.push([x + 1, y]);
+            stack.push([x - 1, y]);
+            stack.push([x, y + 1]);
+            stack.push([x, y - 1]);
+        }
+
+        // Перерисовать сетку
+        const grid = document.getElementById('pixelGrid');
+        const pixelsDivs = grid.querySelectorAll('.pixel');
+        pixelsDivs.forEach(div => {
+            const x = Number(div.dataset.x);
+            const y = Number(div.dataset.y);
+            div.style.backgroundColor = pixels[y][x] || 'transparent';
+        });
+    }
+
+    function clearCanvas() {
+        pixels = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+        const grid = document.getElementById('pixelGrid');
+        const pixelsDivs = grid.querySelectorAll('.pixel');
+        pixelsDivs.forEach(div => div.style.backgroundColor = 'transparent');
+    }
+
+    // Сохранение как PNG
+    function saveImage() {
+        const canvas = document.createElement('canvas');
+        canvas.width = gridSize;
+        canvas.height = gridSize;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = 'rgba(0,0,0,0)'; // прозрачный фон
+        ctx.fillRect(0, 0, gridSize, gridSize);
+
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                if (pixels[y][x]) {
+                    ctx.fillStyle = pixels[y][x];
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+        }
+
+        const link = document.createElement('a');
+        link.download = `S${gridSize}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // Загрузка файла
+    function handleFileLoad(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = gridSize;
+                canvas.height = gridSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, gridSize, gridSize);
+
+                const imageData = ctx.getImageData(0, 0, gridSize, gridSize).data;
+
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        const idx = (y * gridSize + x) * 4;
+                        const r = imageData[idx];
+                        const g = imageData[idx + 1];
+                        const b = imageData[idx + 2];
+                        const a = imageData[idx + 3];
+
+                        if (a === 0) {
+                            pixels[y][x] = null;
+                        } else {
+                            const alpha = a / 255;
+                            pixels[y][x] = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                        }
+                    }
+                }
+
+                // Перерисовать
+                const grid = document.getElementById('pixelGrid');
+                const pixelsDivs = grid.querySelectorAll('.pixel');
+                pixelsDivs.forEach(div => {
+                    const x = Number(div.dataset.x);
+                    const y = Number(div.dataset.y);
+                    div.style.backgroundColor = pixels[y][x] || 'transparent';
+                });
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    init();
+</script>
+
+ 

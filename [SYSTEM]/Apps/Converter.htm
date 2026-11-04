@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Конвертер</title>
+<style>
+  html,body{ height:100%; margin:0; padding: 4px}
+  body{ font-family:"Segoe UI",sans-serif; background:#1e1f24; color:#e8e9ec;}
+</style>
+</head>
+<body>
+<br>
+<br>
+<br>
+<br>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;padding:16px}
+.wrap{max-width:960px;margin:0 auto}
+h1{text-align:center;margin:16px 0 4px;color:#58a6ff;font-size:1.7em}
+.sub{text-align:center;color:#8b949e;margin-bottom:24px;font-size:.88em}
+.tabs{display:flex;gap:6px;margin-bottom:0;justify-content:center;flex-wrap:wrap}
+.tab{padding:11px 22px;background:#161b22;border:1px solid #30363d;border-radius:10px 10px 0 0;cursor:pointer;color:#8b949e;font-size:.95em;transition:.2s;user-select:none}
+.tab:hover{background:#21262d;color:#c9d1d9}
+.tab.active{background:#161b22;border-bottom-color:#161b22;color:#58a6ff;font-weight:600}
+.panel{display:none;background:#161b22;border:1px solid #30363d;border-top:none;border-radius:0 0 10px 10px;padding:24px}
+.panel.active{display:block}
+.dz{border:2px dashed #30363d;border-radius:10px;padding:36px 20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:16px}
+.dz:hover,.dz.over{border-color:#58a6ff;background:#0d1117}
+.dz .ic{font-size:2em;margin-bottom:8px}
+.dz p{color:#8b949e;font-size:1.05em}
+.fmt{color:#6e7681;font-size:.78em;margin-top:6px}
+.fi{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;margin-bottom:16px;display:none}
+.fi.show{display:block}
+.fi .r{display:flex;justify-content:space-between;margin:4px 0;font-size:.88em}
+.fi .r .l{color:#8b949e}
+.opts{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;align-items:flex-end}
+.og{display:flex;flex-direction:column;gap:5px}
+.og label{font-size:.82em;color:#8b949e}
+select,input[type=number],input[type=range]{background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;padding:8px 10px;font-size:.9em}
+select:focus,input:focus{outline:none;border-color:#58a6ff}
+.cb{display:flex;align-items:center;gap:6px}
+.cb input{accent-color:#58a6ff;width:16px;height:16px}
+.cb label{font-size:.88em;color:#c9d1d9;cursor:pointer}
+.btn{background:#238636;border:1px solid #238636;color:#fff;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:1em;transition:.2s}
+.btn:hover{background:#2ea043}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sec{background:#21262d;border-color:#30363d;color:#c9d1d9}
+.btn.sec:hover{background:#30363d}
+.prog{height:6px;background:#0d1117;border-radius:3px;overflow:hidden;margin:12px 0;display:none}
+.prog.show{display:block}
+.prog .bar{height:100%;background:linear-gradient(90deg,#58a6ff,#238636);transition:width .3s;width:0%}
+.pv{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px}
+.pi{flex:1;min-width:200px}
+.pi h3{font-size:.85em;color:#8b949e;margin-bottom:6px}
+.pi img,.pi video,.pi audio{max-width:100%;border-radius:8px;border:1px solid #30363d}
+.res{margin-top:16px}
+.ri{display:flex;align-items:center;gap:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;margin-bottom:8px}
+.ri .info{flex:1}
+.ri .info .nm{font-weight:600;color:#c9d1d9;font-size:.92em}
+.ri .info .sz{color:#8b949e;font-size:.82em;margin-top:2px}
+.note{background:#1c1f2b;border-left:3px solid #f0883e;border-radius:0 6px 6px 0;padding:10px 14px;margin:12px 0;font-size:.82em;color:#8b949e}
+.fc{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.fr{position:relative}
+.fr img{max-width:140px;border-radius:4px;border:1px solid #30363d;display:block}
+.fr .tl{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.72);color:#fff;font-size:.72em;padding:2px 6px;text-align:center}
+.fr .dl{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.72);color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:.72em;cursor:pointer}
+.fr .dl:hover{background:#238636}
+.qw{display:none}
+.qw.on{display:flex;flex-direction:column;gap:5px}
+.qv{font-size:.82em;color:#58a6ff}
+</style>
+
+<div class="wrap">
+
+<div class="tabs">
+<div class="tab active" data-t="image"> Фото</div>
+<div class="tab" data-t="audio"> Аудио</div>
+<div class="tab" data-t="video"> Видео</div>
+</div>
+
+<!-- ============ IMAGE ============ -->
+<div class="panel active" id="p-image">
+<div class="dz" id="dz-img">
+
+<p>Перетащите изображение или нажмите для выбора</p>
+<div class="fmt">Вход: PNG, JPEG, WebP, GIF, BMP, SVG, AVIF — можно несколько файлов</div>
+<input type="file" id="f-img" accept="image/*" hidden multiple>
+</div>
+
+<div class="fi" id="fi-img">
+<div class="r"><span class="l">Файл:</span><span id="img-nm"></span></div>
+<div class="r"><span class="l">Размер:</span><span id="img-sz"></span></div>
+<div class="r"><span class="l">Формат:</span><span id="img-ty"></span></div>
+<div class="r"><span class="l">Разрешение:</span><span id="img-dm"></span></div>
+<div class="r" id="img-batch-row" style="display:none"><span class="l">Файлов в очереди:</span><span id="img-batch"></span></div>
+</div>
+<div class="opts">
+<div class="og">
+<label>Формат вывода:</label>
+<select id="img-fmt">
+<option value="image/png">PNG (без потерь)</option>
+<option value="image/jpeg">JPEG</option>
+<option value="image/webp">WebP</option>
+<option value="image/bmp">BMP</option>
+</select>
+</div>
+<div class="og qw on" id="qw-img">
+<label>Качество: <span class="qv" id="qv-img">90%</span></label>
+<input type="range" id="img-q" min="1" max="100" value="90">
+</div>
+<div class="og">
+<label>Ширина (px):</label>
+<input type="number" id="img-w" placeholder="Авто">
+</div>
+<div class="og">
+<label>Высота (px):</label>
+<input type="number" id="img-h" placeholder="Авто">
+</div>
+<div class="og">
+<label>Поворот:</label>
+<select id="img-rot">
+<option value="0">0°</option>
+<option value="90">90°</option>
+<option value="180">180°</option>
+<option value="270">270°</option>
+</select>
+</div>
+<div class="cb">
+<input type="checkbox" id="img-gray"><label for="img-gray">Ч/Б</label>
+</div>
+<div class="cb">
+<input type="checkbox" id="img-flip"><label for="img-flip">Зеркало</label>
+</div>
+<div class="cb">
+<input type="checkbox" id="img-batch-mode"><label for="img-batch-mode">Пакетный режим</label>
+</div>
+</div>
+
+<div class="prog" id="pg-img"><div class="bar" id="pb-img"></div></div>
+
+<button class="btn" id="btn-img">Конвертировать</button>
+
+<div class="pv" id="pv-img" style="display:none">
+<div class="pi"><h3>Оригинал</h3><img id="img-orig"></div>
+<div class="pi"><h3>Результат</h3><img id="img-res"></div>
+</div>
+
+<div class="res" id="res-img"></div>
+</div>
+
+<!-- ============ AUDIO ============ -->
+<div class="panel" id="p-audio">
+<div class="dz" id="dz-aud">
+
+<p>Перетащите аудиофайл или нажмите для выбора</p>
+<div class="fmt">Вход: MP3, WAV, OGG, FLAC, AAC, M4A, Opus (зависит от браузера)</div>
+<input type="file" id="f-aud" accept="audio 
+function fmtBytes(b){
+  if(b<1024)return b+' Б';
+  if(b<1048576)return(b/1024).toFixed(1)+' КБ';
+  return(b/1048576).toFixed(2)+' МБ';
+}
+function dlBlob(blob,name){
+  const u=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=u;a.download=name;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(u),2000);
+}
+function extOf(mt){
+  const m={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/bmp':'bmp','audio/wav':'wav','video/webm':'webm'};
+  return m[mt]||'bin';
+}
+function baseName(fn){
+  const d=fn.lastIndexOf('.');
+  return d>0?fn.substring(0,d):fn;
+}
+function strBytes(view,off,s){
+  for(let i=0;i<s.length;i++)view.setUint8(off+i,s.charCodeAt(i));
+}
+
+function canvasToBMP(canvas){
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height;
+  const id=ctx.getImageData(0,0,w,h);
+  const px=id.data;
+  const rowSize=Math.floor((24*w+31)/32)*4;
+  const imgSize=rowSize*h;
+  const fSize=54+imgSize;
+  const buf=new ArrayBuffer(fSize);
+  const v=new DataView(buf);
+  
+  v.setUint8(0,0x42);v.setUint8(1,0x4D);
+  v.setUint32(2,fSize,true);
+  v.setUint32(6,0,true);
+  v.setUint32(10,54,true);
+  
+  v.setUint32(14,40,true);
+  v.setInt32(18,w,true);
+  v.setInt32(22,h,true);
+  v.setUint16(26,1,true);
+  v.setUint16(28,24,true);
+  v.setUint32(30,0,true);
+  v.setUint32(34,imgSize,true);
+  v.setInt32(38,2835,true);
+  v.setInt32(42,2835,true);
+  v.setUint32(46,0,true);
+  v.setUint32(50,0,true);
+  
+  let off=54;
+  for(let y=h-1;y>=0;y--){
+    let ro=off;
+    for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      v.setUint8(ro++,px[i+2]);
+      v.setUint8(ro++,px[i+1]);
+      v.setUint8(ro++,px[i]);
+    }
+    const pad=rowSize-w*3;
+    for(let p=0;p<pad;p++)v.setUint8(ro++,0);
+    off+=rowSize;
+  }
+  return new Blob([buf],{type:'image/bmp'});
+}
+
+function audioBufferToWav(ab,bitDepth,startSec,endSec,forceMono,reverse){
+  const sr=ab.sampleRate;
+  const total=ab.length;
+  const sf=Math.floor((startSec||0)*sr);
+  const ef=endSec?Math.min(Math.floor(endSec*sr),total):total;
+  const n=ef-sf;
+  const nc=forceMono?1:ab.numberOfChannels;
+  const bps=bitDepth/8;
+  const ba=nc*bps;
+  const ds=n*ba;
+  const bs=44+ds;
+  const buf=new ArrayBuffer(bs);
+  const v=new DataView(buf);
+  strBytes(v,0,'RIFF');
+  v.setUint32(4,36+ds,true);
+  strBytes(v,8,'WAVE');
+  strBytes(v,12,'fmt ');
+  v.setUint32(16,16,true);
+  v.setUint16(20,bitDepth===32?3:1,true);
+  v.setUint16(22,nc,true);
+  v.setUint32(24,sr,true);
+  v.setUint32(28,sr*ba,true);
+  v.setUint16(32,ba,true);
+  v.setUint16(34,bitDepth,true);
+  strBytes(v,36,'data');
+  v.setUint32(40,ds,true);
+  
+  const chans=[];
+  if(forceMono){
+    const mono=new Float32Array(n);
+    for(let c=0;c<ab.numberOfChannels;c++){
+      const d=ab.getChannelData(c);
+      for(let i=0;i<n;i++)mono[i]+=d[sf+i]/ab.numberOfChannels;
+    }
+    chans.push(mono);
+  }else{
+    for(let c=0;c<ab.numberOfChannels;c++){
+      const d=ab.getChannelData(c);
+      const slice=new Float32Array(n);
+      for(let i=0;i<n;i++)slice[i]=d[sf+i];
+      chans.push(slice);
+    }
+  }
+  
+  if(reverse){
+    for(let c=0;c<chans.length;c++){
+      const d=chans[c];
+      const r=new Float32Array(d.length);
+      for(let i=0;i<d.length;i++)r[i]=d[d.length-1-i];
+      chans[c]=r;
+    }
+  }
+  let off=44;
+  for(let i=0;i<n;i++){
+    for(let c=0;c<nc;c++){
+      let s=chans[c][i];
+      s=Math.max(-1,Math.min(1,s));
+      if(bitDepth===16){v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);off+=2;}
+      else if(bitDepth===8){v.setUint8(off,Math.round((s+1)*127.5));off+=1;}
+      else if(bitDepth===32){v.setFloat32(off,s,true);off+=4;}
+    }
+  }
+  return new Blob([buf],{type:'audio/wav'});
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('p-'+t.dataset.t).classList.add('active');
+  });
+});
+
+function setupDZ(dzId,fId,handler){
+  const dz=document.getElementById(dzId);
+  const f=document.getElementById(fId);
+  dz.addEventListener('click',()=>f.click());
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files.length)handler(e.dataTransfer.files);});
+  f.addEventListener('change',e=>{if(e.target.files.length)handler(e.target.files);});
+}
+
+let imgFiles=[];
+let curImg=new Image();
+
+setupDZ('dz-img','f-img',files=>{
+  imgFiles=Array.from(files);
+  const f=imgFiles[0];
+  const url=URL.createObjectURL(f);
+  curImg.onload=()=>{
+    document.getElementById('fi-img').classList.add('show');
+    document.getElementById('img-nm').textContent=imgFiles.length>1?(imgFiles.length+' файлов'):f.name;
+    document.getElementById('img-sz').textContent=imgFiles.length>1?fmtBytes(imgFiles.reduce((s,x)=>s+x.size,0)):fmtBytes(f.size);
+    document.getElementById('img-ty').textContent=f.type||'неизвестен';
+    document.getElementById('img-dm').textContent=curImg.naturalWidth+' × '+curImg.naturalHeight;
+    document.getElementById('img-w').placeholder=curImg.naturalWidth;
+    document.getElementById('img-h').placeholder=curImg.naturalHeight;
+    if(imgFiles.length>1){
+      document.getElementById('img-batch-row').style.display='flex';
+      document.getElementById('img-batch').textContent=imgFiles.length;
+    }else{
+      document.getElementById('img-batch-row').style.display='none';
+    }
+    document.getElementById('pv-img').style.display='flex';
+    document.getElementById('img-orig').src=url;
+  };
+  curImg.src=url;
+});
+
+document.getElementById('img-fmt').addEventListener('change',e=>{
+  const show=e.target.value==='image/jpeg'||e.target.value==='image/webp';
+  document.getElementById('qw-img').classList.toggle('on',show);
+});
+document.getElementById('img-q').addEventListener('input',e=>{
+  document.getElementById('qv-img').textContent=e.target.value+'%';
+});
+
+async function convertImageFile(file,format,quality,tw,th,rot,gray,flip){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.naturalWidth,h=img.naturalHeight;
+      
+      if(tw||th){
+        if(tw&&!th){h=Math.round(h*(tw/w));w=tw;}
+        else if(th&&!tw){w=Math.round(w*(th/h));h=th;}
+        else{w=tw||w;h=th||h;}
+      }
+      
+      let cw=w,ch=h;
+      if(rot===90||rot===270){cw=h;ch=w;}
+      const canvas=document.createElement('canvas');
+      canvas.width=cw;canvas.height=ch;
+      const ctx=canvas.getContext('2d');
+      ctx.save();
+      if(rot){ctx.translate(cw/2,ch/2);ctx.rotate(rot*Math.PI/180);ctx.translate(-w/2,-h/2);}
+      if(flip){ctx.translate(w,0);ctx.scale(-1,1);}
+      ctx.drawImage(img,0,0,w,h);
+      ctx.restore();
+      
+      if(gray){
+        const id=ctx.getImageData(0,0,cw,ch);
+        const d=id.data;
+        for(let i=0;i<d.length;i+=4){
+          const g=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
+          d[i]=d[i+1]=d[i+2]=g;
+        }
+        ctx.putImageData(id,0,0);
+      }
+      
+      if(format==='image/bmp'){
+        resolve(canvasToBMP(canvas));
+      }else{
+        canvas.toBlob(b=>resolve(b),format,quality);
+      }
+    };
+    img.onerror=()=>reject(new Error('Не удалось загрузить: '+file.name));
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+document.getElementById('btn-img').addEventListener('click',async()=>{
+  if(!imgFiles.length)return;
+  const format=document.getElementById('img-fmt').value;
+  const quality=parseInt(document.getElementById('img-q').value)/100;
+  const tw=parseInt(document.getElementById('img-w').value)||0;
+  const th=parseInt(document.getElementById('img-h').value)||0;
+  const rot=parseInt(document.getElementById('img-rot').value);
+  const gray=document.getElementById('img-gray').checked;
+  const flip=document.getElementById('img-flip').checked;
+  const batchMode=document.getElementById('img-batch-mode').checked;
+  const files=batchMode?imgFiles:[imgFiles[0]];
+
+  document.getElementById('pg-img').classList.add('show');
+  document.getElementById('pb-img').style.width='0%';
+  document.getElementById('btn-img').disabled=true;
+  const resDiv=document.getElementById('res-img');
+  resDiv.innerHTML='';
+
+  for(let i=0;i<files.length;i++){
+    try{
+      const blob=await convertImageFile(files[i],format,quality,tw,th,rot,gray,flip);
+      const ext=extOf(format);
+      const outName=baseName(files[i].name)+'.'+ext;
+      document.getElementById('pb-img').style.width=((i+1)/files.length*100)+'%';
+
+      if(i===0){
+        document.getElementById('img-res').src=URL.createObjectURL(blob);
+      }
+
+      const item=document.createElement('div');
+      item.className='ri';
+      item.innerHTML='<div class="info"><div class="nm">'+outName+'</div><div class="sz">'+fmtBytes(blob.size)+' → '+format+'</div></div>';
+      const btn=document.createElement('button');
+      btn.className='btn';btn.textContent='Скачать';
+      btn.onclick=()=>dlBlob(blob,outName);
+      item.appendChild(btn);
+      resDiv.appendChild(item);
+    }catch(e){
+      const item=document.createElement('div');
+      item.className='ri';
+      item.innerHTML='<div class="info"><div class="nm">'+files[i].name+'</div><div class="sz" style="color:#f85149">Ошибка: '+e.message+'</div></div>';
+      resDiv.appendChild(item);
+    }
+  }
+
+  document.getElementById('btn-img').disabled=false;
+  setTimeout(()=>{
+    document.getElementById('pg-img').classList.remove('show');
+    document.getElementById('pb-img').style.width='0%';
+  },1000);
+});
+
+let audFile=null;
+let audBuf=null;
+
+setupDZ('dz-aud','f-aud',async files=>{
+  audFile=files[0];
+  document.getElementById('fi-aud').classList.add('show');
+  document.getElementById('aud-nm').textContent=audFile.name;
+  document.getElementById('aud-sz').textContent=fmtBytes(audFile.size);
+  document.getElementById('aud-ty').textContent=audFile.type||'неизвестен';
+  document.getElementById('aud-dur').textContent='декодирование...';
+  document.getElementById('pv-aud').style.display='flex';
+  document.getElementById('aud-orig').src=URL.createObjectURL(audFile);
+
+  try{
+    const ab=await audFile.arrayBuffer();
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    audBuf=await ctx.decodeAudioData(ab);
+    ctx.close();
+    document.getElementById('aud-dur').textContent=audBuf.duration.toFixed(2)+' сек';
+    document.getElementById('aud-ch').textContent=audBuf.numberOfChannels;
+    document.getElementById('aud-sr').textContent=audBuf.sampleRate+' Гц';
+    document.getElementById('aud-en').placeholder=audBuf.duration.toFixed(1);
+  }catch(e){
+    document.getElementById('aud-dur').textContent='Не удалось декодировать (формат не поддерживается браузером)';
+    audBuf=null;
+  }
+});
+
+document.getElementById('btn-aud').addEventListener('click',()=>{
+  if(!audBuf)return;
+  const bd=parseInt(document.getElementById('aud-fmt').value);
+  const st=parseFloat(document.getElementById('aud-st').value)||0;
+  const en=parseFloat(document.getElementById('aud-en').value)||audBuf.duration;
+  const mono=document.getElementById('aud-mono').checked;
+  const rev=document.getElementById('aud-reverse').checked;
+
+  document.getElementById('pg-aud').classList.add('show');
+  document.getElementById('pb-aud').style.width='50%';
+
+  const blob=audioBufferToWav(audBuf,bd,st,en,mono,rev);
+  document.getElementById('pb-aud').style.width='100%';
+  const outName=baseName(audFile.name)+'.wav';
+  document.getElementById('aud-res').src=URL.createObjectURL(blob);
+
+  const resDiv=document.getElementById('res-aud');
+  resDiv.innerHTML='';
+  const item=document.createElement('div');
+  item.className='ri';
+  item.innerHTML='<div class="info"><div class="nm">'+outName+'</div><div class="sz">'+fmtBytes(blob.size)+' → WAV '+bd+'-bit'+(mono?' моно':'')+(rev?' реверс':'')+'</div></div>';
+  const btn=document.createElement('button');
+  btn.className='btn';btn.textContent='Скачать';
+  btn.onclick=()=>dlBlob(blob,outName);
+  item.appendChild(btn);
+  resDiv.appendChild(item);
+
+  setTimeout(()=>{
+    document.getElementById('pg-aud').classList.remove('show');
+    document.getElementById('pb-aud').style.width='0%';
+  },1000);
+});
+
+let vidFile=null;
+
+setupDZ('dz-vid','f-vid',async files=>{
+  vidFile=files[0];
+  const url=URL.createObjectURL(vidFile);
+  const v=document.createElement('video');
+  v.onloadedmetadata=()=>{
+    document.getElementById('fi-vid').classList.add('show');
+    document.getElementById('vid-nm').textContent=vidFile.name;
+    document.getElementById('vid-sz').textContent=fmtBytes(vidFile.size);
+    document.getElementById('vid-ty').textContent=vidFile.type||'неизвестен';
+    document.getElementById('vid-dm').textContent=v.videoWidth+' × '+v.videoHeight;
+    document.getElementById('vid-dur').textContent=v.duration.toFixed(2)+' сек';
+  };
+  v.src=url;
+  document.getElementById('pv-vid').style.display='flex';
+  document.getElementById('vid-orig').src=url;
+});
+
+document.getElementById('vid-mode').addEventListener('change',e=>{
+  const m=e.target.value;
+  document.getElementById('vid-scale-w').style.display=m==='convert'?'flex':'none';
+  document.getElementById('vid-fps-w').style.display=m==='convert'?'flex':'none';
+  document.getElementById('vid-int-w').style.display=m==='frames'?'flex':'none';
+  document.getElementById('vid-fmt-frm-w').style.display=m==='frames'?'flex':'none';
+  document.getElementById('vid-note').style.display=m==='convert'?'block':'none';
+  document.getElementById('vid-res-pv').style.display='none';
+});
+
+document.getElementById('btn-vid').addEventListener('click',async()=>{
+  if(!vidFile)return;
+  const mode=document.getElementById('vid-mode').value;
+  const pg=document.getElementById('pg-vid');
+  const bar=document.getElementById('pb-vid');
+  const res=document.getElementById('res-vid');
+  const fc=document.getElementById('fc-vid');
+  res.innerHTML='';fc.innerHTML='';
+  document.getElementById('vid-res-pv').style.display='none';
+  pg.classList.add('show');
+  bar.style.width='0%';
+  document.getElementById('btn-vid').disabled=true;
+
+  if(mode==='convert'){
+    try{
+      const video=document.createElement('video');
+      video.src=URL.createObjectURL(vidFile);
+      video.muted=true;
+      video.playsInline=true;
+      await new Promise(r=>{video.onloadedmetadata=r;});
+      await new Promise(r=>{video.oncanplaythrough=r;});
+      const scale=parseFloat(document.getElementById('vid-scale').value);
+      const fps=parseInt(document.getElementById('vid-fps').value);
+      const w=Math.max(2,Math.round(video.videoWidth*scale));
+      const h=Math.max(2,Math.round(video.videoHeight*scale));
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      
+      const vStream=canvas.captureStream(fps);
+      const combined=new MediaStream();
+      vStream.getVideoTracks().forEach(t=>combined.addTrack(t));
+      
+      let actx=null;
+      try{
+        actx=new(window.AudioContext||window.webkitAudioContext)();
+        const src=actx.createMediaElementSource(video);
+        const dest=actx.createMediaStreamDestination();
+        src.connect(dest);
+        dest.stream.getAudioTracks().forEach(t=>combined.addTrack(t));
+      }catch(e){console.warn('No audio:',e);}
+      
+      const mt=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+        .find(t=>MediaRecorder.isTypeSupported(t))||'video/webm';
+      const rec=new MediaRecorder(combined,{mimeType:mt,videoBitsPerSecond:5000000});
+      const chunks=[];
+      rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+      const dur=video.duration;
+      await new Promise(resolve=>{
+        rec.onstop=resolve;
+        rec.start(100);
+        video.play();
+        function draw(){
+          if(video.ended){setTimeout(()=>rec.stop(),300);return;}
+          ctx.drawImage(video,0,0,w,h);
+          bar.style.width=Math.min(100,video.currentTime/dur*100)+'%';
+          requestAnimationFrame(draw);
+        }
+        draw();
+      });
+      if(actx)actx.close();
+      URL.revokeObjectURL(video.src);
+      const blob=new Blob(chunks,{type:'video/webm'});
+      const outName=baseName(vidFile.name)+'.webm';
+      const rurl=URL.createObjectURL(blob);
+      document.getElementById('vid-res').src=rurl;
+      document.getElementById('vid-res-pv').style.display='block';
+      res.innerHTML='';
+      const item=document.createElement('div');
+      item.className='ri';
+      item.innerHTML='<div class="info"><div class="nm">'+outName+'</div><div class="sz">'+fmtBytes(blob.size)+' → WebM '+w+'×'+h+' @ '+fps+'fps</div></div>';
+      const btn=document.createElement('button');
+      btn.className='btn';btn.textContent='Скачать';
+      btn.onclick=()=>dlBlob(blob,outName);
+      item.appendChild(btn);
+      res.appendChild(item);
+    }catch(e){
+      res.innerHTML='<div class="ri"><div class="info"><div class="nm">Ошибка</div><div class="sz" style="color:#f85149">'+e.message+'</div></div></div>';
+    }
+  }else if(mode==='audio'){
+    try{
+      const ab=await vidFile.arrayBuffer();
+      const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      const buf=await ctx.decodeAudioData(ab);
+      ctx.close();
+      bar.style.width='70%';
+      const blob=audioBufferToWav(buf,16,0,buf.duration,false,false);
+      const outName=baseName(vidFile.name)+'.wav';
+      document.getElementById('aud-res')&&(document.getElementById('aud-res').src=URL.createObjectURL(blob));
+      res.innerHTML='';
+      const item=document.createElement('div');
+      item.className='ri';
+      item.innerHTML='<div class="info"><div class="nm">'+outName+'</div><div class="sz">'+fmtBytes(blob.size)+' → WAV 16-bit PCM</div></div>';
+      const btn=document.createElement('button');
+      btn.className='btn';btn.textContent='Скачать';
+      btn.onclick=()=>dlBlob(blob,outName);
+      item.appendChild(btn);
+      res.appendChild(item);
+    }catch(e){
+      res.innerHTML='<div class="ri"><div class="info"><div class="nm">Ошибка</div><div class="sz" style="color:#f85149">Не удалось извлечь аудио. Браузер не поддерживает декодирование этого формата.</div></div></div>';
+    }
+  }else if(mode==='frames'){
+    const interval=parseFloat(document.getElementById('vid-int').value)||1;
+    const frmFmt=document.getElementById('vid-frm-fmt').value;
+    const video=document.createElement('video');
+    video.src=URL.createObjectURL(vidFile);
+    video.muted=true;
+    await new Promise(r=>{video.onloadedmetadata=r;});
+    const canvas=document.createElement('canvas');
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
+    const ctx=canvas.getContext('2d');
+    const times=[];
+    for(let t=0;t<video.duration;t+=interval)times.push(t);
+    const ext=extOf(frmFmt);
+    for(let i=0;i<times.length;i++){
+      await new Promise(r=>{
+        video.currentTime=times[i];
+        video.onseeked=r;
+      });
+      ctx.drawImage(video,0,0);
+      const blob=await new Promise(r=>canvas.toBlob(r,frmFmt,0.92));
+      bar.style.width=((i+1)/times.length*100)+'%';
+      const div=document.createElement('div');
+      div.className='fr';
+      const img=document.createElement('img');
+      img.src=URL.createObjectURL(blob);
+      const tl=document.createElement('div');
+      tl.className='tl';tl.textContent=times[i].toFixed(1)+'с';
+      const dl=document.createElement('button');
+      dl.className='dl';dl.textContent='⬇';dl.title='Скачать';
+      const fname='frame_'+String(i).padStart(4,'0')+'.'+ext;
+      dl.onclick=()=>dlBlob(blob,fname);
+      div.appendChild(img);div.appendChild(tl);div.appendChild(dl);
+      fc.appendChild(div);
+    }
+    URL.revokeObjectURL(video.src);
+    res.innerHTML='';
+    const item=document.createElement('div');
+    item.className='ri';
+    item.innerHTML='<div class="info"><div class="nm">Извлечено '+times.length+' кадров</div><div class="sz">'+ext.toUpperCase()+', интервал '+interval+' сек</div></div>';
+    const btn=document.createElement('button');
+    btn.className='btn';btn.textContent='Скачать все';
+    btn.onclick=()=>{
+      const frms=fc.querySelectorAll('.fr');
+      frms.forEach((f,i)=>{
+        setTimeout(()=>{
+          const dlBtn=f.querySelector('.dl');
+          if(dlBtn)dlBtn.click();
+        },i*300);
+      });
+    };
+    item.appendChild(btn);
+    res.appendChild(item);
+  }
+
+  document.getElementById('btn-vid').disabled=false;
+  bar.style.width='100%';
+  setTimeout(()=>{
+    pg.classList.remove('show');
+    bar.style.width='0%';
+  },1500);
+});
+</script>
+
+<br>
+<br>
+<br>
+<br>
+
+</body>
+</html>

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f0f0f;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(20,20,20,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #333;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  header h1 span {
+    font-size: 26px;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 0px 0px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .btn:hover { background: #383838; border-color: #666; }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: #4a6cf7;
+    border-color: #4a6cf7;
+    color: #fff;
+  }
+  .btn-primary:hover { background: #5b7bf8; }
+
+  .counter {
+    font-size: 13px;
+    color: #888;
+    white-space: nowrap;
+  }
+
+  main {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+    position: relative;
+  }
+  .card:hover {
+    border-color: #555;
+    transform: translateY(-2px);
+  }
+
+  .card-media {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: #111;
+    display: block;
+    cursor: pointer;
+  }
+
+  .card-video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: #000;
+    overflow: hidden;
+  }
+  .card-video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .card-video-wrapper .play-badge {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%;
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    font-size: 20px;
+  }
+
+  .card-info {
+    padding: 10px 12px 12px;
+  }
+
+  .card-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .card-name:hover { color: #7a9bff; }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .card-actions button {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    color: #ccc;
+    border-radius: 6px;
+    padding: 6px 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .card-actions button:hover { background: #3a3a3a; }
+  .card-actions .btn-del:hover { background: #4a2222; border-color: #6a3333; color: #f88; }
+
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: #666;
+  }
+  .empty p { font-size: 16px; margin-top: 12px; }
+  .empty .icon { font-size: 56px; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: #1a1a1a;
+  }
+  .modal-content img,
+  .modal-content video {
+    max-width: 90vw;
+    max-height: 85vh;
+    display: block;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 10px; right: 14px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  .modal-close:hover { background: rgba(200,0,0,0.7); }
+
+  body.dragging {
+    background: #1a1a1a;
+  }
+  body.dragging::after {
+    content: "Отпустите файлы для загрузки";
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #6f6;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    pointer-events: none;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2a2a2a;
+    border: 1px solid #555;
+    color: #e0e0e0;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    z-index: 300;
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .btn-group { display: flex; gap: 8px; }
+</style>
+
+<header>
+  <div class="toolbar">
+  
+    <span class="counter" id="counter">0 элементов</span>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
+    <button style="background: #222222; border: 1px solid #929292; padding: 5px" class="btn btn-primary" onclick="document.getElementById('fileInput').click()"> Загрузить</button>
+    <button style="background: #222222; border: 1px solid #929292; padding: 5px" class="btn" id="clearBtn"> Очистить всё</button>
+  </div>
+</header>
+
+<main>
+  <div id="gallery" class="gallery"></div>
+  <div id="emptyState" class="empty">
+    <div class="icon"><img src="assets/gallary.png" alt="Image" style="height: 64px; width: 64px;">️</div>
+    <p>Галерея пуста. Загрузите фото или видео — нажмите «Загрузить» или перетащите файлы в окно.</p>
+  </div>
+</main>
+
+<!-- Просмотр -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/*
+  Галерея.
+  — На старте проверяет localStorage на наличие ранее сохранённых медиа.
+  — Новые загрузки хранятся только в оперативной памяти (массив items).
+  — Ничего не записывается обратно в localStorage.
+  — Поддержка: загрузка с диска, drag & drop, скачивание, переименование, удаление, просмотр.
+*/
+
+const LS_KEY = 'gallery_media';
+let items = []; // все медиа в памяти: { id, name, type, url, blob }
+let nextId = 1;
+
+const galleryEl   = document.getElementById('gallery');
+const emptyEl    = document.getElementById('emptyState');
+const counterEl  = document.getElementById('counter');
+const fileInput  = document.getElementById('fileInput');
+const modalEl    = document.getElementById('modal');
+const modalBody  = document.getElementById('modalBody');
+const toastEl    = document.getElementById('toast');
+
+// ─── Toast ───
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toastEl.classList.remove('show'), 2500);
+}
+
+// ─── Старт: читаем localStorage, если там что-то есть ───
+function loadFromLocalStorage() {
+  try {
+    // Ключи, которые могут содержать изображения
+    const imageKeys = [
+      'win10_bg_url',
+      'win10_avatar_url',
+    ];
+
+    // Расширения, которые считаем картинками
+    const imgExts = /\.(jpe?g|png|gif|webp|bmp|svg|ico|avif)$/i;
+
+    // Проходим по всем ключам localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+
+      // --- Случай 1: base64-строка ---
+      // Поддерживаем как data-URI, так и «голый» base64
+      let mimeMatch = raw.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/s);
+      let base64Data = null;
+      let mimeType = null;
+
+      if (mimeMatch) {
+        // data-URI: data:image/png;base64,iVBOR...
+        mimeType = mimeMatch[1];
+        base64Data = mimeMatch[2];
+      } else if (/^[A-Za-z0-9+/=\s]+$/.test(raw) && raw.length > 64) {
+        // «голый» base64 — пытаемся определить тип по ключу или по сигнатуре
+        // Проверяем сигнатуры первых байтов после декодирования
+        try {
+          const byteChars = atob(raw.replace(/\s/g, ''));
+          // PNG: \x89PNG
+          if (byteChars.startsWith('\x89PNG')) mimeType = 'image/png';
+          // JPEG: \xFF\xD8\xFF
+          else if (byteChars.startsWith('\xFF\xD8\xFF')) mimeType = 'image/jpeg';
+          // GIF: GIF8
+          else if (byteChars.startsWith('GIF8')) mimeType = 'image/gif';
+          // WebP: RIFF....WEBP
+          else if (byteChars.startsWith('RIFF') && byteChars.slice(8, 12) === 'WEBP') mimeType = 'image/webp';
+          // BMP: BM
+          else if (byteChars.startsWith('BM')) mimeType = 'image/bmp';
+          // SVG (текстовый)
+          else if (byteChars.trimStart().startsWith('<svg')) mimeType = 'image/svg+xml';
+
+          if (mimeType) base64Data = raw.replace(/\s/g, '');
+        } catch (_) {
+          // Не валидный base64 — пропускаем
+        }
+      }
+
+      if (base64Data && mimeType) {
+        const byteChars = atob(base64Data);
+        const bytes = new Uint8Array(byteChars.length);
+        for (let j = 0; j < byteChars.length; j++) bytes[j] = byteChars.charCodeAt(j);
+        const blob = new Blob([bytes], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        items.push({
+          id: nextId++,
+          name: key || 'Без названия',
+          type: mimeType,
+          url: url,
+        });
+        continue; // нашли картинку — к следующему ключу
+      }
+
+      // --- Случай 2: URL на изображение ---
+      // Включая ключи из второго скрипта: win10_bg_url, win10_avatar_url
+      if (imageKeys.includes(key) || imgExts.test(raw)) {
+        // Если значение — обычный URL (http/https) или путь с графическим расширением
+        if (/^https?:\/\//.test(raw) || imgExts.test(raw)) {
+          items.push({
+            id: nextId++,
+            name: key || 'Без названия',
+            type: 'image/url',
+            url: raw,
+          });
+          continue;
+        }
+
+        // Если value выглядит как base64, но без data-префикса —
+        // пытаемся определить тип по ключу
+        if (imageKeys.includes(key)) {
+          // Для известных ключей пробуем декодировать как base64
+          try {
+            const byteChars = atob(raw.replace(/\s/g, ''));
+            const bytes = new Uint8Array(byteChars.length);
+            for (let j = 0; j < byteChars.length; j++) bytes[j] = byteChars.charCodeAt(j);
+
+            // Определяем тип по сигнатуре
+            let type = 'image/png';
+            if (byteChars.startsWith('\xFF\xD8\xFF')) type = 'image/jpeg';
+            else if (byteChars.startsWith('GIF8')) type = 'image/gif';
+            else if (byteChars.startsWith('RIFF') && byteChars.slice(8, 12) === 'WEBP') type = 'image/webp';
+
+            const blob = new Blob([bytes], { type });
+            const url = URL.createObjectURL(blob);
+            items.push({
+              id: nextId++,
+              name: key,
+              type: type,
+              url: url,
+            });
+            continue;
+          } catch (_) {
+            // Не base64 — возможно, просто URL-строка
+            items.push({
+              id: nextId++,
+              name: key,
+              type: 'image/url',
+              url: raw,
+            });
+            continue;
+          }
+        }
+      }
+
+      // --- Случай 3: JSON-массив с объектами, содержащими data (оригинальная логика) ---
+      if (raw.startsWith('[') || raw.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(raw);
+          const arr = Array.isArray(parsed) ? parsed : [parsed];
+
+          arr.forEach(item => {
+            if (!item || !item.data) return;
+            const byteChars = atob(item.data);
+            const bytes = new Uint8Array(byteChars.length);
+            for (let j = 0; j < byteChars.length; j++) bytes[j] = byteChars.charCodeAt(j);
+            const blob = new Blob([bytes], { type: item.type || 'image/png' });
+            const url = URL.createObjectURL(blob);
+            items.push({
+              id: nextId++,
+              name: item.name || key || 'Без названия',
+              type: item.type || 'image/png',
+              url: url,
+            });
+          });
+        } catch (_) {
+          // Не JSON — пропускаем
+        }
+      }
+    }
+
+    if (items.length) toast(`Загружено из localStorage: ${items.length}`);
+  } catch (e) {
+    console.warn('Не удалось прочитать localStorage:', e);
+  }
+}
+
+// ─── Добавление файлов ───
+function addFiles(files) {
+  let added = 0;
+  for (const file of files) {
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) continue;
+    const url = URL.createObjectURL(file);
+    items.push({
+      id: nextId++,
+      name: file.name || 'Без названия',
+      type: file.type,
+      url: url,
+    });
+    added++;
+  }
+  if (added) {
+    render();
+    toast(`Добавлено: ${added}`);
+  } else {
+    toast('Нет подходящих файлов (только фото и видео)');
+  }
+}
+
+// ─── Скачивание ───
+function downloadItem(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  const a = document.createElement('a');
+  a.href = item.url;
+  // Расширение из type: image/jpeg -> .jpg
+  const ext = item.type.startsWith('image/') ? '.' + item.type.split('/')[1] : '.' + item.type.split('/')[1];
+  a.download = item.name.includes('.') ? item.name : item.name + ext;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('Скачивание началось');
+}
+
+// ─── Переименование ───
+function renameItem(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  const newName = prompt('Новое название:', item.name);
+  if (newName && newName.trim()) {
+    item.name = newName.trim();
+    render();
+    toast('Переименовано');
+  }
+}
+
+// ─── Удаление ───
+function deleteItem(id) {
+  const idx = items.findIndex(i => i.id === id);
+  if (idx === -1) return;
+  URL.revokeObjectURL(items[idx].url);
+  items.splice(idx, 1);
+  render();
+  toast('Удалено');
+}
+
+// ─── Очистить всё ───
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!items.length) return;
+  if (!confirm('Удалить все элементы из галереи?')) return;
+  items.forEach(i => URL.revokeObjectURL(i.url));
+  items = [];
+  render();
+  toast('Галерея очищена');
+});
+
+// ─── Просмотр ───
+function openModal(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  if (item.type.startsWith('image/')) {
+    modalBody.innerHTML = `<img src="${item.url}" alt="${item.name}">`;
+  } else {
+    modalBody.innerHTML = `<video src="${item.url}" controls autoplay style="max-width:90vw;max-height:85vh"></video>`;
+  }
+  modalEl.classList.add('open');
+}
+
+function closeModal(e) {
+  if (e && e.target !== modalEl && !e.target.classList.contains('modal-close')) return;
+  modalEl.classList.remove('open');
+  modalBody.innerHTML = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ─── Рендер ───
+function render() {
+  counterEl.textContent = `${items.length} элемент${plural(items.length)}`;
+
+  if (!items.length) {
+    galleryEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  galleryEl.innerHTML = items.map(item => {
+    const isVideo = item.type.startsWith('video/');
+    const mediaHTML = isVideo
+      ? `<div class="card-video-wrapper" onclick="openModal(${item.id})">
+           <video src="${item.url}" muted preload="metadata"></video>
+           <div class="play-badge">▶</div>
+         </div>`
+      : `<img class="card-media" src="${item.url}" alt="${item.name}" onclick="openModal(${item.id})">`;
+
+    return `
+      <div class="card">
+        ${mediaHTML}
+        <div class="card-info">
+          <div class="card-name" title="Нажмите для переименования" onclick="renameItem(${item.id})">${escapeHtml(item.name)}</div>
+          <div class="card-actions">
+            <button onclick="downloadItem(${item.id})">⬇ Скачать</button>
+            <button onclick="renameItem(${item.id})">✏ Переименовать</button>
+            <button class="btn-del" onclick="deleteItem(${item.id})">🗑 Удалить</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function plural(n) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return '';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'а';
+  return 'ов';
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ─── Загрузка через input ───
+fileInput.addEventListener('change', e => {
+  addFiles(e.target.files);
+  e.target.value = ''; // сброс, чтобы можно было выбрать те же файлы снова
+});
+
+// ─── Drag & Drop ───
+let dragCounter = 0;
+document.addEventListener('dragenter', e => {
+  e.preventDefault();
+  dragCounter++;
+  document.body.classList.add('dragging');
+});
+document.addEventListener('dragleave', e => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    document.body.classList.remove('dragging');
+  }
+});
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  dragCounter = 0;
+  document.body.classList.remove('dragging');
+  if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+});
+
+// ─── Загрузка из IndexedDB (FileVaultDB / files) ───
+// Разрешённые расширения изображений
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'ico', 'avif'];
+
+// MIME по расширению
+const EXT_TO_MIME = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  bmp: 'image/bmp',
+  svg: 'image/svg+xml',
+  ico: 'image/x-icon',
+  avif: 'image/avif'
+};
+
+function getExtension(name) {
+  const m = /\.([a-z0-9]+)$/i.exec(String(name).trim());
+  return m ? m[1].toLowerCase() : null;
+}
+
+function isImageName(name) {
+  const ext = getExtension(name);
+  return !!ext && IMAGE_EXTENSIONS.includes(ext);
+}
+
+function mimeFromName(name) {
+  const ext = getExtension(name);
+  return (ext && EXT_TO_MIME[ext]) || null;
+}
+
+function loadFromIndexedDB() {
+  return new Promise(resolve => {
+    if (!('indexedDB' in window)) return resolve();
+
+    const req = indexedDB.open('FileVaultDB', 1);
+
+    req.onerror = () => resolve();
+
+    req.onupgradeneeded = () => {
+      // База могла ещё не существовать — ничего не создаём, просто читаем то, что есть
+    };
+
+    req.onsuccess = () => {
+      const db = req.result;
+      let tx;
+      try {
+        tx = db.transaction('files', 'readonly');
+      } catch (e) {
+        db.close();
+        return resolve(); // стора 'files' отсутствует
+      }
+
+      const store = tx.objectStore('files');
+      const getAll = store.getAll();
+      const getKeys = store.getAllKeys();
+
+      let values = null, keys = null;
+      getAll.onsuccess = () => {
+        values = getAll.result;
+        if (keys) finish();
+      };
+      getKeys.onsuccess = () => {
+        keys = getKeys.result;
+        if (values) finish();
+      };
+      getAll.onerror = getKeys.onerror = () => resolve();
+
+      function finish() {
+        let added = 0;
+        (values || []).forEach((value, i) => {
+          const rec = addItemFromValue(value, keys ? keys[i] : `idb_${i}`);
+          if (rec) added++;
+        });
+        if (added) toast(`Загружено из FileVaultDB: ${added}`);
+        db.close();
+        resolve();
+      }
+    };
+  });
+}
+
+// Разбирает одно значение из стора. Пропускает только изображения по расширению имени.
+function addItemFromValue(value, fallbackName) {
+  if (value == null) return null;
+
+  // Вариант 1: объект с полями (data/blob/base64/url + name/type)
+  if (typeof value === 'object' && !(value instanceof Blob) && !(value instanceof ArrayBuffer)) {
+    const name = value.name || value.filename || fallbackName;
+    const type = value.type || value.mime || value.mimeType || '';
+
+    if (!isImageName(name)) return null; // ← фильтр по расширению
+    const mime = mimeFromName(name);
+
+    if (value.blob instanceof Blob) {
+      return pushItem(name, value.blob.type || mime || type || 'image/png', URL.createObjectURL(value.blob));
+    }
+    if (typeof value.data === 'string' || typeof value.base64 === 'string') {
+      return pushFromBase64(name, value.data || value.base64, mime || type);
+    }
+    if (typeof value.url === 'string') {
+      return pushItem(name, mime || type || 'image/url', value.url);
+    }
+    if (value.type && value.data) {
+      return pushFromBase64(name, value.data, value.type);
+    }
+    return null;
+  }
+
+  // Вариант 2: в сторе лежит сам Blob.
+  // Имени у Blob нет — имя берём из ключа, поэтому пропускаем только если
+  // ключ (или уже известное имя) выглядит как файл с расширением картинки.
+  if (value instanceof Blob) {
+    if (!isImageName(fallbackName)) return null;
+    const mime = mimeFromName(fallbackName) || value.type || 'image/png';
+    return pushItem(fallbackName, mime, URL.createObjectURL(value));
+  }
+
+  // Вариант 3: ArrayBuffer / TypedArray — опять же только по имени из ключа
+  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
+    if (!isImageName(fallbackName)) return null;
+    const bytes = value instanceof ArrayBuffer ? new Uint8Array(value) : new Uint8Array(value.buffer);
+    const mime = mimeFromName(fallbackName);
+    if (!mime) return null;
+    return pushItem(fallbackName, mime, URL.createObjectURL(new Blob([bytes], { type: mime })));
+  }
+
+  // Вариант 4: строка
+  if (typeof value === 'string') {
+    if (/^data:(image|video)\//.test(value)) {
+      if (!isImageName(fallbackName)) return null;
+      return pushItem(fallbackName, value.slice(5, value.indexOf(';')), value);
+    }
+    if (/^https?:\/\//.test(value)) {
+      if (!isImageName(fallbackName)) return null;
+      return pushItem(fallbackName, mimeFromName(fallbackName) || 'image/url', value);
+    }
+    return pushFromBase64(fallbackName, value, null);
+  }
+
+  return null;
+}
+
+function pushFromBase64(name, raw, typeHint) {
+  try {
+    const b64 = raw.replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '');
+    if (b64.length < 64) return null;
+    const byteChars = atob(b64);
+    const bytes = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i);
+    const type = typeHint && typeHint.includes('/') ? typeHint : mimeFromName(name) || 'image/png';
+    return pushItem(name, type, URL.createObjectURL(new Blob([bytes], { type })));
+  } catch (_) {
+    return null;
+  }
+}
+
+function pushItem(name, type, url) {
+  items.push({ id: nextId++, name: String(name), type, url });
+  return true;
+}
+
+// ─── Старт ───
+loadFromLocalStorage();
+loadFromIndexedDB().then(() => render());
+
+</script>

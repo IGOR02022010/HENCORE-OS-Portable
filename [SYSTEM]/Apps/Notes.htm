@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Заметки</title>
+<style>
+  html,body{ height:100%; margin:0; padding: 4px}
+  body{ font-family:"Segoe UI",sans-serif; background:#1e1f24; color:#e8e9ec;}
+</style>
+</head>
+<body>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    color: #000000;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container { max-width: 760px; margin: 0 auto; }
+
+  /* ---- Header ---- */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .count-badge {
+    background: #6366f1;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  /* ---- Composer ---- */
+  .composer {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .composer input {
+    flex: 1;
+    padding: 14px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  .composer input:focus { border-color: #6366f1; }
+
+  .composer button {
+    padding: 14px 24px;
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+  }
+
+  .composer button:hover { background: #5558e9; }
+
+  /* ---- Notes list ---- */
+  .notes-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .note {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    transition: box-shadow .2s, transform .1s;
+    position: relative;
+  }
+
+  .note:hover { box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+
+  .note-text {
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-right: 90px;
+  }
+
+  .note-text a {
+    color: #4f46e5;
+    text-decoration: none;
+    border-bottom: 1px dotted #4f46e5;
+    cursor: pointer;
+  }
+
+  .note-text a:hover { border-bottom-style: solid; }
+
+  /* ---- Actions ---- */
+  .note-actions {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .note-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: #94a3b8;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background .2s, color .2s;
+  }
+
+  .note-actions button:hover { background: #f1f5f9; color: #6366f1; }
+  .note-actions .btn-delete:hover { color: #ef4444; }
+
+  .note-date {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 10px;
+  }
+
+  /* ---- Edit mode ---- */
+  .note-edit-input {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px 14px;
+    border: 2px solid #6366f1;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+  }
+
+  .edit-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .edit-buttons button {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-save   { background: #6366f1; color: #fff; }
+  .btn-cancel { background: #e2e8f0; color: #475569; }
+
+  /* ---- Link editor modal ---- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 90%;
+    max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+
+  .modal h3 {
+    font-size: 18px;
+    margin-bottom: 18px;
+  }
+
+  .modal label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+
+  .modal input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  .modal input:focus { border-color: #6366f1; }
+
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+    justify-content: flex-end;
+  }
+
+  .modal-buttons button {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-modal-save   { background: #6366f1; color: #fff; }
+  .btn-modal-cancel { background: #e2e8f0; color: #475569; }
+
+  /* ---- Empty state ---- */
+  .empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 60px 20px;
+    font-size: 15px;
+  }
+</style>
+
+<div class="container">
+  <div class="header">
+
+    <span class="count-badge" id="count">0</span>
+  </div>
+
+  <div class="composer">
+    <input type="text" id="noteInput" placeholder="Напишите заметку и нажмите Enter…" autocomplete="off">
+    <button onclick="addNote()">Добавить</button>
+  </div>
+
+  <div class="notes-list" id="notesList"></div>
+</div>
+
+<div class="modal-overlay" id="linkModal">
+  <div class="modal">
+    <h3>Редактировать ссылку</h3>
+    <label>Текст ссылки</label>
+    <input type="text" id="linkText" placeholder="Текст, который виден">
+    <label>URL адрес</label>
+    <input type="text" id="linkUrl" placeholder="https://example.com">
+    <div class="modal-buttons">
+      <button class="btn-modal-cancel" onclick="closeLinkModal()">Отмена</button>
+      <button class="btn-modal-save" onclick="saveLink()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const STORAGE_KEY = 'notes_app_v1';
+let notes = [];
+let currentLinkNoteId = null;
+let currentLinkIndex = null;
+
+function loadNotes() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  notes = raw ? JSON.parse(raw) : [];
+}
+
+function saveNotes() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
+
+function linkify(text) {
+  
+  const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+  return text.replace(urlRegex, (match) => {
+    const href = match.startsWith('http') ? match : 'https://' + match;
+    
+    const safeHref = href.replace(/"/g, '&quot;');
+    const displayText = match.replace(/^https?:\/\//, '');
+    return `<a href="${safeHref}" target="self" rel="noopener noreferrer">${displayText}</a>`;
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleString('ru-RU', {
+    day: 'numeric', month: 'long',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function addNote() {
+  const input = document.getElementById('noteInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  notes.unshift({
+    id: Date.now(),
+    text: text,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  });
+
+  saveNotes();
+  render();
+  input.value = '';
+  input.focus();
+}
+
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  saveNotes();
+  render();
+}
+
+function startEdit(id) {
+  
+  const noteEl = document.querySelector(`[data-note-id="${id}"]`);
+  const textDiv = noteEl.querySelector('.note-text');
+  const actionsDiv = noteEl.querySelector('.note-actions');
+
+  const currentNote = notes.find(n => n.id === id);
+  if (!currentNote) return;
+
+  actionsDiv.style.display = 'none';
+
+  textDiv.innerHTML = `
+    <textarea class="note-edit-input" id="edit-${id}">${currentNote.text}</textarea>
+    <div class="edit-buttons">
+      <button class="btn-save" onclick="saveEdit(${id})">Сохранить</button>
+      <button class="btn-cancel" onclick="render()">Отмена</button>
+    </div>
+  `;
+  const ta = document.getElementById(`edit-${id}`);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+function saveEdit(id) {
+  const ta = document.getElementById(`edit-${id}`);
+  if (!ta) return;
+  const newText = ta.value.trim();
+  if (!newText) return;
+
+  const note = notes.find(n => n.id === id);
+  if (note) {
+    note.text = newText;
+    note.updatedAt = Date.now();
+  }
+
+  saveNotes();
+  render();
+}
+
+function openLinkModal(noteId, linkIndex) {
+  currentLinkNoteId = noteId;
+  currentLinkIndex = linkIndex;
+
+  const note = notes.find(n => n.id === noteId);
+  if (!note) return;
+
+  const links = extractLinks(note.text);
+  if (!links[linkIndex]) return;
+
+  document.getElementById('linkText').value = links[linkIndex].text;
+  document.getElementById('linkUrl').value = links[linkIndex].url;
+  document.getElementById('linkModal').classList.add('show');
+}
+
+function closeLinkModal() {
+  document.getElementById('linkModal').classList.remove('show');
+  currentLinkNoteId = null;
+  currentLinkIndex = null;
+}
+
+function saveLink() {
+  if (currentLinkNoteId === null) return;
+
+  const newText = document.getElementById('linkText').value.trim();
+  const newUrl = document.getElementById('linkUrl').value.trim();
+  if (!newUrl) return;
+
+  const fullUrl = newUrl.startsWith('http') ? newUrl : 'https://' + newUrl;
+
+  const note = notes.find(n => n.id === currentLinkNoteId);
+  if (!note) return;
+
+  let linkCounter = 0;
+  const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+  note.text = note.text.replace(urlRegex, (match) => {
+    if (linkCounter === currentLinkIndex) {
+      linkCounter++;
+      
+      return fullUrl;
+    }
+    linkCounter++;
+    return match; 
+  });
+
+  note.updatedAt = Date.now();
+  saveNotes();
+  closeLinkModal();
+  render();
+}
+
+function extractLinks(text) {
+  const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+  const links = [];
+  let m;
+  while ((m = urlRegex.exec(text)) !== null) {
+    links.push({
+      url: m[0].startsWith('http') ? m[0] : 'https://' + m[0],
+      text: m[0].replace(/^https?:\/\//, '')
+    });
+  }
+  return links;
+}
+
+function render() {
+  loadNotes();
+  const list = document.getElementById('notesList');
+  const count = document.getElementById('count');
+
+  if (notes.length === 0) {
+    list.innerHTML = '<div class="empty">Нет заметок. Напишите первую выше ↑</div>';
+    count.textContent = '0';
+    return;
+  }
+
+  count.textContent = notes.length;
+
+  list.innerHTML = notes.map((note) => {
+    
+    let linkIdx = 0;
+    const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+    const processed = note.text.replace(urlRegex, (match) => {
+      const idx = linkIdx++;
+      const href = match.startsWith('http') ? match : 'https://' + match;
+      const safeHref = href.replace(/"/g, '&quot;');
+      const displayText = match.replace(/^https?:\/\//, '');
+      
+      return `<a href="${safeHref}" target="self" rel="noopener noreferrer" oncontextmenu="event.preventDefault(); openLinkModal(${note.id}, ${idx}); return false;">${displayText}</a>`;
+    });
+
+    const safeText = processed; 
+
+    return `
+      <div class="note" data-note-id="${note.id}">
+        <div class="note-actions">
+          <button class="btn-edit" onclick="startEdit(${note.id})">✏️ Редакт.</button>
+          <button class="btn-delete" onclick="deleteNote(${note.id})">🗑 Удалить</button>
+        </div>
+        <div class="note-text">${safeText}</div>
+        <div class="note-date">${formatDate(note.createdAt)}${note.updatedAt !== note.createdAt ? ' · изменён ' + formatDate(note.updatedAt) : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('notesList').addEventListener('click', (e) => {
+  if (e.target.tagName === 'A') {
+
+  }
+});
+
+document.getElementById('noteInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addNote();
+});
+
+document.getElementById('linkModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeLinkModal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeLinkModal();
+});
+
+render();
+</script>
+
+</body>
+</html>

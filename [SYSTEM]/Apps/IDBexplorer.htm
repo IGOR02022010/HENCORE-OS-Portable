@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+ <!-- Пиши код ниже до второго примичания!!! -->
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;
+  --accent2:#533483;--text:#eaeaea;--text-dim:#8892a6;
+  --border:#2a2a4a;--success:#4ade80;--warn:#fbbf24;--radius:10px;
+  --shadow:0 4px 24px rgba(0,0,0,.35);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.topbar .logo{font-size:20px;font-weight:700;letter-spacing:.5px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.topbar .search{flex:1;max-width:400px;position:relative}
+.topbar .search input{width:100%;padding:8px 12px 8px 36px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none}
+.topbar .search input:focus{border-color:var(--accent)}
+.topbar .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5}
+.storage-info{font-size:12px;color:var(--text-dim);white-space:nowrap}
+
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);transition:.15s}
+.btn:hover{background:var(--accent2);border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent)}
+.btn.primary:hover{opacity:.85}
+.btn.danger:hover{background:#c0392b;border-color:#c0392b}
+.btn svg{width:16px;height:16px}
+.toolbar .spacer{flex:1}
+.view-toggle{display:flex;gap:2px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.view-toggle button{padding:7px 10px;background:var(--surface2);border:none;color:var(--text-dim);cursor:pointer;font-size:13px}
+.view-toggle button.active{background:var(--accent);color:#fff}
+
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:12px 8px;overflow-y:auto;flex-shrink:0}
+.sidebar-section{margin-bottom:16px}
+.sidebar-section h3{font-size:11px;text-transform:uppercase;color:var(--text-dim);padding:0 10px 6px;letter-spacing:1px}
+.sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;transition:.12s}
+.sidebar-item:hover{background:var(--surface2)}
+.sidebar-item.active{background:var(--accent2)}
+.sidebar-item svg{width:18px;height:18px;flex-shrink:0}
+.sidebar-item .count{margin-left:auto;font-size:11px;color:var(--text-dim)}
+
+.breadcrumbs{display:flex;align-items:center;gap:4px;padding:8px 20px;background:var(--surface);border-bottom:1px solid var(--border);font-size:13px;flex-shrink:0;flex-wrap:wrap}
+.crumb{cursor:pointer;padding:3px 8px;border-radius:5px;color:var(--text-dim);transition:.12s}
+.crumb:hover{background:var(--surface2);color:var(--text)}
+.crumb.current{color:var(--text);font-weight:600}
+.crumb-sep{color:var(--text-dim);opacity:.4}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.file-area{flex:1;overflow-y:auto;padding:16px 20px;position:relative}
+
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.file-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.file-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+.file-card.selected{border-color:var(--accent);background:rgba(233,69,96,.08)}
+.file-card .icon{font-size:40px;margin-bottom:8px;line-height:1}
+.file-card .name{font-size:12px;word-break:break-word;max-height:34px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.file-card .meta{font-size:10px;color:var(--text-dim);margin-top:4px}
+.file-card .checkbox{position:absolute;top:8px;left:8px;width:18px;height:18px;border:2px solid var(--border);border-radius:4px;opacity:0;transition:.15s;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.file-card:hover .checkbox{opacity:.6}
+.file-card.selected .checkbox{opacity:1;background:var(--accent);border-color:var(--accent)}
+.file-card .checkbox::after{content:'';width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);opacity:0}
+.file-card.selected .checkbox::after{opacity:1}
+.file-card .preview-img{width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px}
+
+.file-list{display:flex;flex-direction:column}
+.file-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;transition:.1s;border:1px solid transparent}
+.file-row:hover{background:var(--surface)}
+.file-row.selected{background:rgba(233,69,96,.08);border-color:var(--accent)}
+.file-row .icon{font-size:22px;width:30px;text-align:center;flex-shrink:0}
+.file-row .name{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-row .meta{font-size:11px;color:var(--text-dim);white-space:nowrap}
+.file-row .meta.size{width:80px;text-align:right}
+.file-row .meta.date{width:120px;text-align:right}
+.file-row .preview-thumb{width:30px;height:30px;object-fit:cover;border-radius:4px}
+
+.drag-overlay{position:absolute;inset:0;background:rgba(83,52,131,.3);border:3px dashed var(--accent);border-radius:var(--radius);display:none;align-items:center;justify-content:center;z-index:100;pointer-events:none}
+.drag-overlay.active{display:flex}
+.drag-overlay .text{font-size:24px;font-weight:600;color:var(--accent)}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-dim)}
+.empty-state .icon{font-size:64px;margin-bottom:16px;opacity:.3}
+.empty-state p{font-size:14px}
+
+.ctx-menu{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);padding:6px;z-index:1000;min-width:180px;display:none}
+.ctx-menu.show{display:block}
+.ctx-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;transition:.1s}
+.ctx-item:hover{background:var(--surface2)}
+.ctx-item.danger{color:var(--accent)}
+.ctx-item.danger:hover{background:rgba(233,69,96,.15)}
+.ctx-item svg{width:16px;height:16px}
+.ctx-divider{height:1px;background:var(--border);margin:4px 8px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(3px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;min-width:400px;max-width:90vw;max-height:90vh;box-shadow:var(--shadow)}
+.modal h2{font-size:18px;margin-bottom:16px}
+.modal input,.modal textarea{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px}
+.modal input:focus,.modal textarea:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.modal .info-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.modal .info-row span:first-child{color:var(--text-dim)}
+
+.preview-container{max-width:800px;max-height:70vh;text-align:center}
+.preview-container img{max-width:100%;max-height:60vh;border-radius:8px}
+.preview-container video{max-width:100%;max-height:60vh;border-radius:8px}
+.preview-container .text-preview{text-align:left;max-height:50vh;overflow-y:auto;background:var(--bg);padding:16px;border-radius:8px;font-family:'Courier New',monospace;font-size:13px;white-space:pre-wrap;word-break:break-word}
+.preview-container audio{width:100%;margin-top:10px}
+
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 20px;box-shadow:var(--shadow);font-size:13px;animation:slideIn .3s ease;display:flex;align-items:center;gap:8px;max-width:350px}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--accent)}
+.toast.info{border-left:3px solid var(--accent2)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+
+.loading{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:4000}
+.loading.show{display:flex}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:680px){
+  .sidebar{display:none}
+  .topbar .search{max-width:200px}
+  .storage-info{display:none}
+  .file-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+  .file-row .meta.date{display:none}
+}
+</style>
+
+<div class="topbar">
+
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="text" id="searchInput" placeholder="Поиск файлов и папок...">
+  </div>
+  <div class="storage-info" id="storageInfo">____</div><p class="storage-info"  id="storagefff">____</p>
+</div>
+<script>
+async function updateStorageInfo() {
+    const storageDisplay = document.getElementById('storagefff');
+
+    // Проверяем, поддерживает ли браузер StorageManager
+    if (navigator.storage && navigator.storage.estimate) {
+        try {
+            const estimate = await navigator.storage.estimate();
+
+            // estimate.quota — общий выделенный объем (в байтах)
+            // estimate.usage — сколько уже занято (в байтах)
+            const quota = estimate.quota;
+            const usage = estimate.usage;
+            const remaining = quota - usage;
+
+            // Функция для перевода байтов в читаемый формат (ГБ, МБ и т.д.)
+            const formatBytes = (bytes) => {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            };
+
+            storageDisplay.textContent = `(Весь объём: ${formatBytes(quota)})`;
+            
+        } catch (error) {
+            console.error("Ошибка при получении данных о хранилище:", error);
+            storageDisplay.textContent = "Ошибка данных";
+        }
+    } else {
+        storageDisplay.textContent = "Браузер не поддерживает Storage API";
+    }
+}
+
+updateStorageInfo();</script>
+<div class="toolbar">
+  <button class="btn primary" onclick="uploadFiles()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Загрузить</button>
+  <button class="btn" onclick="createFolder()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>Новая папка</button>
+  <button class="btn" onclick="createFile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>Новый файл</button>
+  <button class="btn" id="downloadBtn" onclick="downloadSelected()" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Скачать</button>
+  <button class="btn danger" id="deleteBtn" onclick="deleteSelected()" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Удалить</button>
+  <div class="spacer"></div>
+  <div class="view-toggle">
+    <button id="gridBtn" class="active" title="Показывать файлы сеткой" onclick="setView('grid')">▦</button>
+    <button id="listBtn" title="Показывать файлы таблицей" onclick="setView('list')">☰</button>
+  </div>
+</div>
+
+<div class="breadcrumbs" id="breadcrumbs">
+  <span class="crumb current" onclick="navigateTo([])">🏠 Главная</span>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>Навигация</h3>
+      <div class="sidebar-item active" onclick="goHome()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Главная
+      </div>
+      <div class="sidebar-item" onclick="showAllFiles()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Все файлы
+      </div>
+      <div class="sidebar-item" onclick="showImages()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Изображения
+      </div>
+      <div class="sidebar-item" onclick="showDocuments()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Документы
+      </div>
+      <div class="sidebar-item" onclick="showMedia()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Медиа
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Корзина</h3>
+      <div class="sidebar-item" onclick="showTrash()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Корзина
+        <span class="count" id="trashCount">0</span>
+      </div>
+      <div class="sidebar-item" onclick="emptyTrash()" style="font-size:12px;color:var(--text-dim)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Очистить корзину
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Информация</h3>
+      <div class="sidebar-item" onclick="exportData()">
+	  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Экспорт данных
+      </div>
+      <div class="sidebar-item" onclick="importData()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Импорт данных
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="file-area" id="fileArea" oncontextmenu="return onContextMenu(event)">
+      <div class="drag-overlay" id="dragOverlay">
+        <div class="text">📁 Отпустите файлы для загрузки</div>
+      </div>
+      <div id="fileContainer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="ctx-menu" id="ctxMenu"></div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalContent" onclick="event.stopPropagation()"></div>
+</div>
+
+<div class="loading" id="loading"><div class="spinner"></div></div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<input type="file" id="fileInput" multiple style="display:none">
+<input type="file" id="importInput" accept=".json" style="display:none">
+
+<script>
+
+const DB_NAME='FileVaultDB',DB_VERSION=1,STORE='files';
+let db=null;
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains(STORE)){
+        const s=d.createObjectStore(STORE,{keyPath:'id'});
+        s.createIndex('parentId','parentId',{unique:false});
+        s.createIndex('name','name',{unique:false});
+        s.createIndex('type','type',{unique:false});
+        s.createIndex('trashed','trashed',{unique:false});
+      }
+    };
+    req.onsuccess=e=>{db=e.target.result;resolve(db)};
+    req.onerror=e=>reject(e.target.error);
+  });
+}
+
+function tx(mode){
+  return db.transaction(STORE,mode).objectStore(STORE);
+}
+
+function dbAdd(item){
+  return new Promise((res,rej)=>{
+    const r=tx('readwrite').add(item);
+    r.onsuccess=()=>res(item);r.onerror=()=>rej(r.error);
+  });
+}
+function dbPut(item){
+  return new Promise((res,rej)=>{
+    const r=tx('readwrite').put(item);
+    r.onsuccess=()=>res(item);r.onerror=()=>rej(r.error);
+  });
+}
+function dbGet(id){
+  return new Promise((res,rej)=>{
+    const r=tx('readonly').get(id);
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+  });
+}
+function dbDelete(id){
+  return new Promise((res,rej)=>{
+    const r=tx('readwrite').delete(id);
+    r.onsuccess=()=>res();r.onerror=()=>rej(r.error);
+  });
+}
+function dbAll(){
+  return new Promise((res,rej)=>{
+    const r=tx('readonly').getAll();
+    r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);
+  });
+}
+function dbByIndex(indexName,value){
+  return new Promise((res,rej)=>{
+    const r=tx('readonly').index(indexName).getAll(value);
+    r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);
+  });
+}
+
+let currentPath=[]; 
+let currentView='list';
+let selectedIds=new Set();
+let allFilesCache=[];
+let currentFilter=null; 
+let clipboard={ids:[],action:null}; 
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,9);
+
+function fileIcon(type,name){
+  if(type==='folder')return '📁';
+  const ext=(name.split('.').pop()||'').toLowerCase();
+  const map={png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',svg:'🖼️',webp:'🖼️',bmp:'🖼️',ico:'🖼️',
+    mp4:'🎬',avi:'🎬',mov:'🎬',mkv:'🎬',webm:'🎬',
+    mp3:'🎵',wav:'🎵',ogg:'🎵',flac:'🎵',m4a:'🎵',
+    pdf:'📕',doc:'📘',docx:'📘',xls:'📗',xlsx:'📗',ppt:'📙',pptx:'📙',
+    txt:'📄',md:'📄',json:'📄',csv:'📄',xml:'📄',html:'📄',css:'📄',js:'📄',
+    zip:'🗜️',rar:'🗜️','7z':'🗜️',tar:'🗜️',gz:'🗜️',
+    exe:'⚙️',dmg:'⚙️',apk:'⚙️',
+    default:'📄'};
+  return map[ext]||map.default;
+}
+
+function fileCategory(name){
+  const ext=(name.split('.').pop()||'').toLowerCase();
+  if(['png','jpg','jpeg','gif','svg','webp','bmp','ico'].includes(ext))return'images';
+  if(['mp4','avi','mov','mkv','webm','mp3','wav','ogg','flac','m4a'].includes(ext))return'media';
+  if(['pdf','doc','docx','xls','xlsx','ppt','pptx','txt','md','json','csv','xml','html','css','js'].includes(ext))return'documents';
+  return'other';
+}
+
+function isImage(name){return['png','jpg','jpeg','gif','svg','webp','bmp','ico'].includes((name.split('.').pop()||'').toLowerCase())}
+function isVideo(name){return['mp4','avi','mov','mkv','webm'].includes((name.split('.').pop()||'').toLowerCase())}
+function isAudio(name){return['mp3','wav','ogg','flac','m4a'].includes((name.split('.').pop()||'').toLowerCase())}
+function isText(name){return['txt','md','json','csv','xml','html','css','js','log','py','java','c','cpp','rb','go','rs','ts','jsx','tsx','sh','bat','yaml','yml','toml','ini','conf'].includes((name.split('.').pop()||'').toLowerCase())}
+
+function formatSize(bytes){
+  if(!bytes)return'0 Б';
+  const u=['Б','КБ','МБ','ГБ','ТБ'];
+  const i=Math.floor(Math.log(bytes)/Math.log(1024));
+  return(bytes/Math.pow(1024,i)).toFixed(i>0?1:0)+' '+u[i];
+}
+
+function formatDate(ts){
+  if(!ts)return'—';
+  const d=new Date(ts);
+  return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function render(){
+  allFilesCache=await dbAll();
+  let items;
+
+  if(currentFilter==='trash'){
+    items=allFilesCache.filter(f=>f.trashed&&!isDescendantOfTrashed(f));
+  }else if(currentFilter==='all'){
+    items=allFilesCache.filter(f=>!f.trashed && f.type==='file');
+  }else if(currentFilter==='images'){
+    items=allFilesCache.filter(f=>!f.trashed && f.type==='file' && fileCategory(f.name)==='images');
+  }else if(currentFilter==='documents'){
+    items=allFilesCache.filter(f=>!f.trashed && f.type==='file' && fileCategory(f.name)==='documents');
+  }else if(currentFilter==='media'){
+    items=allFilesCache.filter(f=>!f.trashed && f.type==='file' && fileCategory(f.name)==='media');
+  }else{
+    const parentId=currentPath.length?currentPath[currentPath.length-1]:null;
+    items=allFilesCache.filter(f=>!f.trashed && f.parentId===parentId);
+  }
+
+  const search=document.getElementById('searchInput').value.trim().toLowerCase();
+  if(search){
+    items=items.filter(f=>f.name.toLowerCase().includes(search));
+  }
+
+  items.sort((a,b)=>{
+    if(a.type!==b.type)return a.type==='folder'?-1:1;
+    return a.name.localeCompare(b.name);
+  });
+
+  updateBreadcrumbs();
+  updateToolbar();
+
+  const container=document.getElementById('fileContainer');
+  container.innerHTML='';
+
+  if(items.length===0){
+    container.innerHTML=`<div class="empty-state"><div class="icon">${currentFilter==='trash'?'🗑️':'📂'}</div><p>${currentFilter==='trash'?'Корзина пуста':'Папка пуста. Перетащите файлы сюда или нажмите «Загрузить»'}</p></div>`;
+    return;
+  }
+
+  if(currentView==='grid'){
+    const grid=document.createElement('div');
+    grid.className='file-grid';
+    for(const item of items){
+      grid.appendChild(await createCard(item));
+    }
+    container.appendChild(grid);
+  }else{
+    const list=document.createElement('div');
+    list.className='file-list';
+    for(const item of items){
+      list.appendChild(await createRow(item));
+    }
+    container.appendChild(list);
+  }
+}
+
+function isDescendantOfTrashed(item){
+  
+  let pid=item.parentId;
+  while(pid){
+    const parent=allFilesCache.find(f=>f.id===pid);
+    if(!parent)return false;
+    if(parent.trashed)return true;
+    pid=parent.parentId;
+  }
+  return false;
+}
+
+async function createCard(item){
+  const card=document.createElement('div');
+  card.className='file-card'+(selectedIds.has(item.id)?' selected':'');
+  card.dataset.id=item.id;
+
+  let iconHtml=`<div class="icon">${fileIcon(item.type,item.name)}</div>`;
+  if(item.type==='file' && isImage(item.name) && item.blob){
+    const url=URL.createObjectURL(item.blob);
+    iconHtml=`<img class="preview-img" src="${url}" alt="${item.name}">`;
+  }
+
+  card.innerHTML=`
+    <div class="checkbox"></div>
+    ${iconHtml}
+    <div class="name">${escapeHtml(item.name)}</div>
+    <div class="meta">${item.type==='folder'?'—':formatSize(item.size)}</div>
+  `;
+
+  card.addEventListener('click',e=>{
+    if(e.shiftKey||e.ctrlKey||e.metaKey){
+      toggleSelect(item.id);
+    }else{
+      selectedIds.clear();
+      selectedIds.add(item.id);
+      render();
+    }
+  });
+  card.addEventListener('dblclick',()=>openItem(item));
+  card.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();selectedIds.clear();selectedIds.add(item.id);render();showContextMenu(e.clientX,e.clientY,item)});
+  return card;
+}
+
+async function createRow(item){
+  const row=document.createElement('div');
+  row.className='file-row'+(selectedIds.has(item.id)?' selected':'');
+  row.dataset.id=item.id;
+
+  let iconHtml=`<div class="icon">${fileIcon(item.type,item.name)}</div>`;
+  if(item.type==='file' && isImage(item.name) && item.blob){
+    const url=URL.createObjectURL(item.blob);
+    iconHtml=`<img class="preview-thumb" src="${url}" alt="${item.name}">`;
+  }
+
+  row.innerHTML=`
+    ${iconHtml}
+    <div class="name">${escapeHtml(item.name)}</div>
+    <div class="meta size">${item.type==='folder'?'—':formatSize(item.size)}</div>
+    <div class="meta date">${formatDate(item.modified)}</div>
+  `;
+
+  row.addEventListener('click',e=>{
+    if(e.shiftKey||e.ctrlKey||e.metaKey){
+      toggleSelect(item.id);
+    }else{
+      selectedIds.clear();
+      selectedIds.add(item.id);
+      render();
+    }
+  });
+  row.addEventListener('dblclick',()=>openItem(item));
+  row.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();selectedIds.clear();selectedIds.add(item.id);render();showContextMenu(e.clientX,e.clientY,item)});
+  return row;
+}
+
+function toggleSelect(id){
+  if(selectedIds.has(id))selectedIds.delete(id);
+  else selectedIds.add(id);
+  render();
+}
+
+function escapeHtml(s){
+  const d=document.createElement('div');
+  d.textContent=s;
+  return d.innerHTML;
+}
+
+function updateBreadcrumbs(){
+  const bc=document.getElementById('breadcrumbs');
+  bc.innerHTML='';
+  const home=document.createElement('span');
+  home.className='crumb'+(currentPath.length===0&&!currentFilter?' current':'');
+  home.textContent='🏠 Главная';
+  home.onclick=()=>goHome();
+  bc.appendChild(home);
+
+  if(currentFilter){
+    const labels={trash:'🗑️ Корзина',all:'📄 Все файлы',images:'🖼️ Изображения',documents:'📄 Документы',media:'🎬 Медиа'};
+    const sep=document.createElement('span');sep.className='crumb-sep';sep.textContent='/';bc.appendChild(sep);
+    const c=document.createElement('span');c.className='crumb current';c.textContent=labels[currentFilter]||'';bc.appendChild(c);
+    return;
+  }
+
+  for(let i=0;i<currentPath.length;i++){
+    const sep=document.createElement('span');sep.className='crumb-sep';sep.textContent='/';bc.appendChild(sep);
+    const folder=allFilesCache.find(f=>f.id===currentPath[i]);
+    const crumb=document.createElement('span');
+    crumb.className='crumb'+(i===currentPath.length-1?' current':'');
+    crumb.textContent=folder?folder.name:'...';
+    crumb.onclick=()=>navigateTo(currentPath.slice(0,i+1));
+    bc.appendChild(crumb);
+  }
+}
+
+function navigateTo(path){
+  currentPath=path;
+  currentFilter=null;
+  selectedIds.clear();
+  setActiveSidebar('home');
+  render();
+}
+
+function goHome(){
+  navigateTo([]);
+}
+
+function setActiveSidebar(key){
+  document.querySelectorAll('.sidebar-item').forEach(el=>el.classList.remove('active'));
+  if(key==='home'){
+    const items=document.querySelectorAll('.sidebar-item');
+    if(items[0])items[0].classList.add('active');
+  }
+}
+
+function showAllFiles(){currentFilter='all';currentPath=[];selectedIds.clear();render()}
+function showImages(){currentFilter='images';currentPath=[];selectedIds.clear();render()}
+function showDocuments(){currentFilter='documents';currentPath=[];selectedIds.clear();render()}
+function showMedia(){currentFilter='media';currentPath=[];selectedIds.clear();render()}
+function showTrash(){currentFilter='trash';currentPath=[];selectedIds.clear();render()}
+
+async function openItem(item){
+  if(item.type==='folder'){
+    currentPath.push(item.id);
+    currentFilter=null;
+    selectedIds.clear();
+    render();
+  }else{
+    await showPreview(item);
+  }
+}
+
+async function showPreview(item){
+  const modal=document.getElementById('modalContent');
+  const overlay=document.getElementById('modalOverlay');
+  let body='';
+
+  if(isImage(item.name)){
+    const url=URL.createObjectURL(item.blob);
+    body=`<div class="preview-container"><img src="${url}" alt="${item.name}"><p style="margin-top:8px;color:var(--text-dim)">${item.name} — ${formatSize(item.size)}</p></div>`;
+  }else if(isVideo(item.name)){
+    const url=URL.createObjectURL(item.blob);
+    body=`<div class="preview-container"><video src="${url}" controls></video><p style="margin-top:8px;color:var(--text-dim)">${item.name} — ${formatSize(item.size)}</p></div>`;
+  }else if(isAudio(item.name)){
+    const url=URL.createObjectURL(item.blob);
+    body=`<div class="preview-container"><p style="margin-bottom:10px">${item.name}</p><audio src="${url}" controls></audio></div>`;
+  }else if(isText(item.name)){
+    const text=await item.blob.text();
+    body=`<div class="preview-container"><h2>${escapeHtml(item.name)}</h2><div class="text-preview">${escapeHtml(text)}</div></div>`;
+  }else{
+    body=`<div class="preview-container"><div style="font-size:64px;margin:20px 0">${fileIcon(item.type,item.name)}</div><h2>${escapeHtml(item.name)}</h2><p style="margin-top:8px;color:var(--text-dim)">Предпросмотр недоступен для этого типа файла.</p><p style="color:var(--text-dim)">Размер: ${formatSize(item.size)}</p></div>`;
+  }
+
+  modal.innerHTML=`${body}<div class="modal-actions"><button class="btn" onclick="closeModal()">Закрыть</button><button class="btn primary" onclick="downloadItem('${item.id}')">Скачать</button></div>`;
+  overlay.classList.add('show');
+}
+
+function closeModal(e){
+  if(e&&e.target!==e.currentTarget)return;
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('modalContent').innerHTML='';
+}
+
+function uploadFiles(){
+  const input=document.getElementById('fileInput');
+  input.value='';
+  input.onchange=async()=>{
+    await handleFiles(input.files);
+  };
+  input.click();
+}
+
+async function handleFiles(fileList){
+  showLoading(true);
+  const parentId=currentFilter?null:(currentPath.length?currentPath[currentPath.length-1]:null);
+  for(const file of fileList){
+    const item={
+      id:uid(),
+      name:file.name,
+      type:'file',
+      parentId:parentId,
+      size:file.size,
+      blob:file,
+      mime:file.type,
+      created:Date.now(),
+      modified:Date.now(),
+      trashed:false
+    };
+    await dbAdd(item);
+  }
+  showLoading(false);
+  toast(`Загружено файлов: ${fileList.length}`,'success');
+  render();
+  updateStorageInfo();
+}
+
+const fileArea=document.getElementById('fileArea');
+const dragOverlay=document.getElementById('dragOverlay');
+let dragCounter=0;
+
+fileArea.addEventListener('dragenter',e=>{
+  e.preventDefault();
+  dragCounter++;
+  if(!currentFilter||currentFilter==='trash')return;
+  dragOverlay.classList.add('active');
+});
+fileArea.addEventListener('dragleave',e=>{
+  e.preventDefault();
+  dragCounter--;
+  if(dragCounter<=0){dragOverlay.classList.remove('active');dragCounter=0}
+});
+fileArea.addEventListener('dragover',e=>e.preventDefault());
+fileArea.addEventListener('drop',async e=>{
+  e.preventDefault();
+  dragCounter=0;
+  dragOverlay.classList.remove('active');
+  if(currentFilter==='trash')return;
+  await handleFiles(e.dataTransfer.files);
+});
+
+function createFolder(){
+  showModal('Новая папка',`
+    <input type="text" id="modalInput" placeholder="Название папки" autofocus>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Отмена</button>
+      <button class="btn primary" onclick="confirmCreateFolder()">Создать</button>
+    </div>
+  `);
+  setTimeout(()=>{const i=document.getElementById('modalInput');if(i)i.focus()},50);
+}
+
+async function confirmCreateFolder(){
+  const name=document.getElementById('modalInput').value.trim();
+  if(!name){toast('Введите название','error');return}
+  const parentId=currentFilter?null:(currentPath.length?currentPath[currentPath.length-1]:null);
+  await dbAdd({id:uid(),name,type:'folder',parentId,size:0,blob:null,mime:'',created:Date.now(),modified:Date.now(),trashed:false});
+  closeModal();
+  toast('Папка создана','success');
+  render();
+}
+
+function createFile(){
+  showModal('Новый текстовый файл',`
+    <input type="text" id="modalFileName" placeholder="имя_файла.txt" autofocus>
+    <textarea id="modalFileContent" rows="8" placeholder="Содержимое файла..."></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Отмена</button>
+      <button class="btn primary" onclick="confirmCreateFile()">Создать</button>
+    </div>
+  `);
+  setTimeout(()=>{const i=document.getElementById('modalFileName');if(i)i.focus()},50);
+}
+
+async function confirmCreateFile(){
+  const name=document.getElementById('modalFileName').value.trim();
+  const content=document.getElementById('modalFileContent').value;
+  if(!name){toast('Введите имя файла','error');return}
+  const blob=new Blob([content],{type:'text/plain'});
+  const parentId=currentFilter?null:(currentPath.length?currentPath[currentPath.length-1]:null);
+  await dbAdd({id:uid(),name,type:'file',parentId,size:blob.size,blob,mime:'text/plain',created:Date.now(),modified:Date.now(),trashed:false});
+  closeModal();
+  toast('Файл создан','success');
+  render();
+  updateStorageInfo();
+}
+
+function renameItem(item){
+  showModal('Переименовать',`
+    <input type="text" id="modalInput" value="${escapeHtml(item.name)}" autofocus>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Отмена</button>
+      <button class="btn primary" onclick="confirmRename('${item.id}')">Переименовать</button>
+    </div>
+  `);
+  setTimeout(()=>{const i=document.getElementById('modalInput');if(i){i.focus();i.select()}},50);
+}
+
+async function confirmRename(id){
+  const name=document.getElementById('modalInput').value.trim();
+  if(!name){toast('Введите название','error');return}
+  const item=await dbGet(id);
+  if(!item)return;
+  item.name=name;
+  item.modified=Date.now();
+  await dbPut(item);
+  closeModal();
+  toast('Переименовано','success');
+  render();
+}
+
+async function downloadSelected(){
+  for(const id of selectedIds){
+    await downloadItem(id);
+  }
+}
+
+async function downloadItem(id){
+  const item=await dbGet(id);
+  if(!item||item.type!=='file'||!item.blob)return;
+  const url=URL.createObjectURL(item.blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=item.name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function deleteSelected(){
+  if(selectedIds.size===0)return;
+  if(currentFilter==='trash'){
+    
+    if(!confirm(`Удалить ${selectedIds.size} элемент(ов) безвозвратно?`))return;
+    for(const id of selectedIds){
+      await deleteRecursive(id);
+    }
+    toast('Удалено безвозвратно','success');
+  }else{
+    
+    for(const id of selectedIds){
+      const item=await dbGet(id);
+      if(item){item.trashed=true;item.modified=Date.now();await dbPut(item)}
+    }
+    toast('Перемещено в корзину','info');
+  }
+  selectedIds.clear();
+  render();
+  updateTrashCount();
+  updateStorageInfo();
+}
+
+async function deleteRecursive(id){
+  const children=await dbByIndex('parentId',id);
+  for(const child of children){
+    await deleteRecursive(child.id);
+  }
+  await dbDelete(id);
+}
+
+async function emptyTrash(){
+  const trashed=allFilesCache.filter(f=>f.trashed);
+  if(trashed.length===0){toast('Корзина уже пуста','info');return}
+  if(!confirm(`Очистить корзину? ${trashed.length} элемент(ов) будет удалено безвозвратно.`))return;
+  for(const item of trashed){
+    await deleteRecursive(item.id);
+  }
+  toast('Корзина очищена','success');
+  render();
+  updateTrashCount();
+  updateStorageInfo();
+}
+
+async function restoreItem(item){
+  item.trashed=false;
+  item.modified=Date.now();
+  
+  if(item.parentId){
+    const parent=await dbGet(item.parentId);
+    if(parent&&parent.trashed){item.parentId=null}
+  }
+  await dbPut(item);
+  toast('Восстановлено','success');
+  render();
+  updateTrashCount();
+}
+
+async function copySelected(){
+  if(selectedIds.size===0)return;
+  clipboard={ids:[...selectedIds],action:'copy'};
+  toast('Скопировано','info');
+}
+
+async function cutSelected(){
+  if(selectedIds.size===0)return;
+  clipboard={ids:[...selectedIds],action:'cut'};
+  toast('Вырезано','info');
+}
+
+async function paste(){
+  if(clipboard.ids.length===0)return;
+  const parentId=currentPath.length?currentPath[currentPath.length-1]:null;
+  for(const id of clipboard.ids){
+    const item=await dbGet(id);
+    if(!item)continue;
+    if(clipboard.action==='copy'){
+      await copyRecursive(item,parentId);
+    }else{
+      item.parentId=parentId;
+      item.modified=Date.now();
+      await dbPut(item);
+    }
+  }
+  if(clipboard.action==='cut'){clipboard={ids:[],action:null}}
+  toast('Вставлено','success');
+  render();
+}
+
+async function copyRecursive(item,newParentId){
+  const newId=uid();
+  const newItem={...item,id:newId,parentId:newParentId,created:Date.now(),modified:Date.now()};
+  await dbAdd(newItem);
+  const children=await dbByIndex('parentId',item.id);
+  for(const child of children){
+    await copyRecursive(child,newId);
+  }
+}
+
+async function showProperties(item){
+  let childCount=0;
+  if(item.type==='folder'){
+    const allItems=await dbAll();
+    childCount=countDescendants(item.id,allItems);
+  }
+  const parentId=item.parentId;
+  let parentName='—';
+  if(parentId){
+    const parent=await dbGet(parentId);
+    if(parent)parentName=parent.name;
+  }
+  showModal('Свойства',`
+    <div class="info-row"><span>Имя:</span><span>${escapeHtml(item.name)}</span></div>
+    <div class="info-row"><span>Тип:</span><span>${item.type==='folder'?'Папка':'Файл'}</span></div>
+    <div class="info-row"><span>Размер:</span><span>${formatSize(item.size)}</span></div>
+    <div class="info-row"><span>Родитель:</span><span>${escapeHtml(parentName)}</span></div>
+    ${item.type==='folder'?`<div class="info-row"><span>Элементов внутри:</span><span>${childCount}</span></div>`:''}
+    <div class="info-row"><span>MIME:</span><span>${item.mime||'—'}</span></div>
+    <div class="info-row"><span>Создан:</span><span>${formatDate(item.created)}</span></div>
+    <div class="info-row"><span>Изменён:</span><span>${formatDate(item.modified)}</span></div>
+    <div class="info-row"><span>ID:</span><span style="font-size:10px">${item.id}</span></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Закрыть</button>
+    </div>
+  `);
+}
+
+function countDescendants(id,allItems){
+  let count=0;
+  const children=allItems.filter(f=>f.parentId===id);
+  for(const child of children){
+    count++;
+    count+=countDescendants(child.id,allItems);
+  }
+  return count;
+}
+
+// ===================== Context Menu =====================
+function onContextMenu(e){
+  e.preventDefault();
+  selectedIds.clear();
+  showContextMenu(e.clientX,e.clientY,null);
+}
+
+function showContextMenu(x,y,item){
+  const menu=document.getElementById('ctxMenu');
+  let html='';
+
+  if(item){
+    if(currentFilter==='trash'){
+      html+=`<div class="ctx-item" onclick="restoreItem(await dbGet('${item.id}'));closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Восстановить</div>`;
+      html+=`<div class="ctx-divider"></div>`;
+      html+=`<div class="ctx-item danger" onclick="deleteSinglePermanent('${item.id}');closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Удалить безвозвратно</div>`;
+    }else{
+      if(item.type==='file'){
+        html+=`<div class="ctx-item" onclick="showPreview(await dbGet('${item.id}'));closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Открыть</div>`;
+        html+=`<div class="ctx-item" onclick="downloadItem('${item.id}');closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Скачать</div>`;
+      }
+      html+=`<div class="ctx-divider"></div>`;
+      html+=`<div class="ctx-item" onclick="renameItem(await dbGet('${item.id}'));closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Переименовать</div>`;
+      html+=`<div class="ctx-item" onclick="copySelected();closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Копировать</div>`;
+      html+=`<div class="ctx-item" onclick="cutSelected();closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Вырезать</div>`;
+      html+=`<div class="ctx-divider"></div>`;
+      html+=`<div class="ctx-item" onclick="showProperties(await dbGet('${item.id}'));closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Свойства</div>`;
+      html+=`<div class="ctx-item danger" onclick="trashSingle('${item.id}');closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>В корзину</div>`;
+    }
+  }else{
+    html+=`<div class="ctx-item" onclick="createFolder();closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Новая папка</div>`;
+    html+=`<div class="ctx-item" onclick="createFile();closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Новый файл</div>`;
+    html+=`<div class="ctx-item" onclick="uploadFiles();closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Загрузить файлы</div>`;
+    if(clipboard.ids.length>0){
+      html+=`<div class="ctx-divider"></div>`;
+      html+=`<div class="ctx-item" onclick="paste();closeCtxMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Вставить</div>`;
+    }
+  }
+
+  menu.innerHTML=html;
+  menu.style.left=Math.min(x,window.innerWidth-200)+'px';
+  menu.style.top=Math.min(y,window.innerHeight-menu.offsetHeight-20)+'px';
+  menu.classList.add('show');
+}
+
+function closeCtxMenu(){
+  document.getElementById('ctxMenu').classList.remove('show');
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#ctxMenu'))closeCtxMenu();
+});
+
+async function trashSingle(id){
+  const item=await dbGet(id);
+  if(item){item.trashed=true;item.modified=Date.now();await dbPut(item)}
+  toast('Перемещено в корзину','info');
+  render();updateTrashCount();updateStorageInfo();
+}
+
+async function deleteSinglePermanent(id){
+  if(!confirm('Удалить безвозвратно?'))return;
+  await deleteRecursive(id);
+  toast('Удалено','success');
+  render();updateTrashCount();updateStorageInfo();
+}
+
+// ===================== View toggle =====================
+function setView(v){
+  currentView=v;
+  document.getElementById('gridBtn').classList.toggle('active',v==='grid');
+  document.getElementById('listBtn').classList.toggle('active',v==='list');
+  render();
+}
+
+// ===================== Toolbar =====================
+function updateToolbar(){
+  const dlBtn=document.getElementById('downloadBtn');
+  const delBtn=document.getElementById('deleteBtn');
+  if(selectedIds.size>0){
+    delBtn.style.display='inline-flex';
+    // Show download only if all selected are files
+    const selected=allFilesCache.filter(f=>selectedIds.has(f.id));
+    const allFiles=selected.every(f=>f.type==='file');
+    dlBtn.style.display=allFiles?'inline-flex':'none';
+  }else{
+    dlBtn.style.display='none';
+    delBtn.style.display='none';
+  }
+}
+
+// ===================== Search =====================
+let searchTimer=null;
+document.getElementById('searchInput').addEventListener('input',()=>{
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>render(),200);
+});
+
+// ===================== Toast =====================
+function toast(msg,type='info'){
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(100%)';setTimeout(()=>t.remove(),300)},3000);
+}
+
+// ===================== Loading =====================
+function showLoading(show){
+  document.getElementById('loading').classList.toggle('show',show);
+}
+
+// ===================== Modal =====================
+function showModal(title,content){
+  document.getElementById('modalContent').innerHTML=`<h2>${title}</h2>${content}`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+// ===================== Storage info =====================
+async function updateStorageInfo(){
+  const all=await dbAll();
+  const total=all.filter(f=>f.type==='file').reduce((s,f)=>s+(f.size||0),0);
+  const count=all.filter(f=>!f.trashed).length;
+  document.getElementById('storageInfo').textContent=`${count} элементов · ${formatSize(total)}`;
+}
+
+async function updateTrashCount(){
+  const all=await dbAll();
+  document.getElementById('trashCount').textContent=all.filter(f=>f.trashed).length;
+}
+
+// ===================== Export / Import =====================
+async function exportData(){
+  showLoading(true);
+  const all=await dbAll();
+  const exportItems=[];
+  for(const item of all){
+    const copy={...item};
+    if(item.blob){
+      copy.blobData=Array.from(new Uint8Array(await item.blob.arrayBuffer()));
+      copy.blobType=item.blob.type;
+    }
+    delete copy.blob;
+    exportItems.push(copy);
+  }
+  const json=JSON.stringify(exportItems);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='filevault_export.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showLoading(false);
+  toast('Данные экспортированы','success');
+}
+
+function importData(){
+  const input=document.getElementById('importInput');
+  input.value='';
+  input.onchange=async()=>{
+    const file=input.files[0];
+    if(!file)return;
+    showLoading(true);
+    try{
+      const text=await file.text();
+      const items=JSON.parse(text);
+      for(const item of items){
+        const copy={...item};
+        if(item.blobData){
+          copy.blob=new Blob([new Uint8Array(item.blobData)],{type:item.blobType||''});
+        }
+        delete copy.blobData;
+        delete copy.blobType;
+        await dbPut(copy);
+      }
+      toast(`Импортировано элементов: ${items.length}`,'success');
+      render();updateStorageInfo();updateTrashCount();
+    }catch(err){
+      toast('Ошибка импорта: '+err.message,'error');
+    }
+    showLoading(false);
+  };
+  input.click();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.key==='Delete'||e.key==='Backspace'){if(selectedIds.size>0){e.preventDefault();deleteSelected()}}
+  if(e.ctrlKey||e.metaKey){
+    if(e.key==='c'){copySelected()}
+    if(e.key==='x'){cutSelected()}
+    if(e.key==='v'){paste()}
+    if(e.key==='a'){e.preventDefault();allFilesCache.filter(f=>{
+      const parentId=currentPath.length?currentPath[currentPath.length-1]:null;
+      return !f.trashed && f.parentId===parentId;
+    }).forEach(f=>selectedIds.add(f.id));render()}
+  }
+  if(e.key==='Escape'){selectedIds.clear();render();closeModal();closeCtxMenu()}
+  if(e.key==='Enter'&&selectedIds.size===1){
+    const id=[...selectedIds][0];
+    const item=allFilesCache.find(f=>f.id===id);
+    if(item)openItem(item);
+  }
+});
+
+async function init(){
+  try{
+    db=await openDB();
+    
+    const all=await dbAll();
+    if(all.length===0){
+      await dbAdd({id:uid(),name:'Документы',type:'folder',parentId:null,size:0,blob:null,mime:'',created:Date.now(),modified:Date.now(),trashed:false});
+      await dbAdd({id:uid(),name:'README.txt',type:'file',parentId:null,size:0,blob:new Blob(['Добро пожаловать в FileVault!\n\nЭто файловый менеджер на чистом HTML/CSS/JS с хранением в IndexedDB.\n\nВозможности:\n- Создание папок и файлов\n- Загрузка файлов (drag & drop или кнопка)\n- Скачивание, переименование, удаление\n- Корзина с восстановлением\n- Предпросмотр изображений, видео, аудио, текста\n- Поиск, сортировка, два режима отображения\n- Экспорт/импорт данных\n- Копирование/вырезание/вставка\n- Контекстное меню (правый клик)\n- Горячие клавиши\n\nПриятной работы!'],{type:'text/plain'}),mime:'text/plain',created:Date.now(),modified:Date.now(),trashed:false});
+    }
+    await render();
+    await updateStorageInfo();
+    await updateTrashCount();
+  }catch(err){
+    toast('Ошибка инициализации: '+err.message,'error');
+    console.error(err);
+  }
+}
+
+init();
+</script>
+
+ 

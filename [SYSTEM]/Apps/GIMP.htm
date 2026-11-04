@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+ 
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1e1e2e;--bg2:#2a2a3c;--bg3:#363650;--bg4:#45456a;
+  --border:#555570;--text:#e0e0f0;--text2:#9999b0;
+  --accent:#6c5ce7;--accent2:#a29bfe;--danger:#e74c3c;--ok:#2ecc71;--warn:#f39c12;
+  --canvas-bg:#fff;
+  --r:6px;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size:13px;display:flex;flex-direction:column;user-select:none;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:none;background:none}
+input,select{font-family:inherit;font-size:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+#app{display:flex;flex-direction:column;height:100vh}
+#topbar{display:flex;align-items:center;height:46px;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px;gap:8px;flex-shrink:0}
+#main{display:flex;flex:1;overflow:hidden}
+#left-panel{width:52px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px;flex-shrink:0}
+#center{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#right-panel{width:280px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+#bottombar{height:28px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:16px;flex-shrink:0;font-size:11px;color:var(--text2)}
+
+.menubar{display:flex;gap:2px}
+.menu-btn{padding:5px 10px;border-radius:4px;color:var(--text2)}
+.menu-btn:hover{background:var(--bg3);color:var(--text)}
+.menu-btn.active{background:var(--accent);color:#fff}
+.topbar-sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+.tb-btn{padding:5px 10px;border-radius:4px;display:flex;align-items:center;gap:5px;color:var(--text2)}
+.tb-btn:hover{background:var(--bg3);color:var(--text)}
+.tb-btn:active{background:var(--accent)}
+.brand{font-weight:700;font-size:15px;color:var(--accent2);letter-spacing:.5px;margin-right:8px}
+
+.tool-btn{width:38px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text2);position:relative;transition:all .12s}
+.tool-btn:hover{background:var(--bg3);color:var(--text)}
+.tool-btn.active{background:var(--accent);color:#fff}
+.tool-btn .tip{position:absolute;left:52px;top:50%;transform:translateY(-50%);background:var(--bg4);color:var(--text);padding:4px 8px;border-radius:4px;white-space:nowrap;font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:100;border:1px solid var(--border)}
+.tool-btn:hover .tip{opacity:1}
+.tool-sep{width:60%;height:1px;background:var(--border);margin:4px 0}
+
+#canvas-wrap{flex:1;overflow:auto;position:relative;display:flex;align-items:center;justify-content:center;background:#1a1a28;
+  background-image:linear-gradient(45deg,#222240 25%,transparent 25%),linear-gradient(-45deg,#222240 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#222240 75%),linear-gradient(-45deg,transparent 75%,#222240 75%);
+  background-size:20px 20px;background-position:0 0,0 10px,10px -10px,10px 0px}
+#canvas-container{position:relative;box-shadow:0 0 20px rgba(0,0,0,.5)}
+#canvas-main{display:block;cursor:crosshair}
+#canvas-overlay{position:absolute;top:0;left:0;pointer-events:none}
+#canvas-preview{position:absolute;top:0;left:0;pointer-events:none;opacity:.7}
+
+.panel-section{border-bottom:1px solid var(--border);display:flex;flex-direction:column}
+.panel-header{padding:8px 12px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:flex;justify-content:space-between;align-items:center;cursor:pointer;flex-shrink:0}
+.panel-header:hover{color:var(--text)}
+.panel-body{padding:8px 12px;display:flex;flex-direction:column;gap:8px}
+.panel-body.collapsed{display:none}
+#layers-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.layer-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:5px;background:var(--bg3);cursor:pointer;border:1px solid transparent}
+.layer-item:hover{background:var(--bg4)}
+.layer-item.active{border-color:var(--accent);background:var(--bg4)}
+.layer-item canvas{width:40px;height:30px;border-radius:3px;border:1px solid var(--border);object-fit:contain;background:#fff;image-rendering:pixelated;flex-shrink:0}
+.layer-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-vis{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2)}
+.layer-vis:hover{color:var(--text)}
+
+.row{display:flex;align-items:center;gap:6px}
+.row label{min-width:60px;font-size:11px;color:var(--text2)}
+input[type="range"]{-webkit-appearance:none;flex:1;height:4px;background:var(--bg3);border-radius:2px;outline:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer}
+input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;border:none}
+input[type="number"],input[type="text"],select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--accent)}
+.btn{padding:5px 12px;border-radius:5px;background:var(--bg3);color:var(--text);font-size:12px;border:1px solid var(--border)}
+.btn:hover{background:var(--bg4)}
+.btn:active{background:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent2)}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-row{display:flex;gap:4px;flex-wrap:wrap}
+.color-swatches{display:flex;flex-wrap:wrap;gap:4px}
+.swatch{width:20px;height:20px;border-radius:4px;cursor:pointer;border:1px solid var(--border)}
+.swatch:hover{transform:scale(1.15)}
+.color-display{display:flex;gap:8px;align-items:center}
+.color-box{width:50px;height:50px;border-radius:6px;border:2px solid var(--border);cursor:pointer;flex-shrink:0}
+.color-info{display:flex;flex-direction:column;gap:2px;font-size:11px}
+.color-info span{color:var(--text2)}
+
+.dropdown{position:absolute;top:100%;left:0;background:var(--bg2);border:1px solid var(--border);border-radius:6px;min-width:200px;padding:4px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none}
+.dropdown.open{display:block}
+.drop-item{padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text)}
+.drop-item:hover{background:var(--accent);color:#fff}
+.drop-item.disabled{opacity:.4;pointer-events:none}
+.drop-item kbd{font-size:10px;color:var(--text2);background:var(--bg);padding:1px 5px;border-radius:3px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:300}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;min-width:340px;max-width:90vw;max-height:90vh;overflow-y:auto}
+.modal h2{margin-bottom:16px;font-size:16px;color:var(--accent2)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.modal .row{margin-bottom:10px}
+
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.filter-card{padding:8px;border-radius:6px;background:var(--bg3);text-align:center;font-size:11px;cursor:pointer;border:1px solid transparent}
+.filter-card:hover{background:var(--bg4);border-color:var(--accent)}
+
+#toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:var(--bg4);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;z-index:400;opacity:0;transition:opacity .3s;pointer-events:none;border:1px solid var(--border)}
+#toast.show{opacity:1}
+
+.text-input-overlay{position:absolute;background:var(--bg2);border:1px solid var(--accent);border-radius:4px;padding:4px;color:var(--text);z-index:50;font-size:14px;outline:none}
+
+.gradient-swatch{width:100%;height:8px;border-radius:4px;background:linear-gradient(to right,#000,#fff)}
+
+.marquee{position:absolute;border:1px dashed #fff;pointer-events:none;mix-blend-mode:difference}
+</style>
+
+<div id="app">
+
+  <!-- ==================== TOP BAR ==================== -->
+  <div id="topbar">
+    
+    <div class="menubar" id="menubar">
+      <button class="menu-btn" data-menu="file">Файл</button>
+      <button class="menu-btn" data-menu="edit">Правка</button>
+      <button class="menu-btn" data-menu="image">Изображение</button>
+      <button class="menu-btn" data-menu="layer">Слой</button>
+      <button class="menu-btn" data-menu="filters">Фильтры</button>
+      <button class="menu-btn" data-menu="select">Выделение</button>
+      <button class="menu-btn" data-menu="view">Вид</button>
+    </div>
+    <div style="flex:1"></div>
+    <button class="tb-btn" id="btn-undo" title="Отменить (Ctrl+Z)">&#8617; Отменить</button>
+    <button class="tb-btn" id="btn-redo" title="Вернуть (Ctrl+Y)">&#8618; Вернуть</button>
+    <div class="topbar-sep"></div>
+    <button class="tb-btn" id="btn-export" title="Экспорт PNG">&#8682; Экспорт</button>
+  </div>
+
+  <!-- ==================== MAIN AREA ==================== -->
+  <div id="main">
+    <!-- LEFT TOOLS -->
+    <div id="left-panel">
+      <button class="tool-btn active" data-tool="brush" title="Кисть (B)">&#9999; <span class="tip">Кисть (B)</span></button>
+      <button class="tool-btn" data-tool="pencil" title="Карандаш (P)">&#9998; <span class="tip">Карандаш (P)</span></button>
+      <button class="tool-btn" data-tool="eraser" title="Ластик (E)">&#128397; <span class="tip">Ластик (E)</span></button>
+      <button class="tool-btn" data-tool="bucket" title="Заливка (G)">&#9774; <span class="tip">Заливка (G)</span></button>
+      <button class="tool-btn" data-tool="gradient" title="Градиент">&#9638; <span class="tip">Градиент</span></button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn" data-tool="rect" title="Прямоугольник (R)">&#9706; <span class="tip">Прямоугольник (R)</span></button>
+      <button class="tool-btn" data-tool="ellipse" title="Эллипс (O)">&#8857; <span class="tip">Эллипс (O)</span></button>
+      <button class="tool-btn" data-tool="line" title="Линия (L)">&#9472; <span class="tip">Линия (L)</span></button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn" data-tool="select" title="Прямоугольное выделение (M)">&#9723; <span class="tip">Выделение (M)</span></button>
+      <button class="tool-btn" data-tool="lasso" title="Лассо">&#9982; <span class="tip">Лассо</span></button>
+      <button class="tool-btn" data-tool="move" title="Перемещение (V)">&#8661; <span class="tip">Перемещение (V)</span></button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn" data-tool="eyedropper" title="Пипетка (I)">&#128269; <span class="tip">Пипетка (I)</span></button>
+      <button class="tool-btn" data-tool="text" title="Текст (T)">&#128292; <span class="tip">Текст (T)</span></button>
+      <button class="tool-btn" data-tool="zoom" title="Масштаб (Z)">&#128269; <span class="tip">Масштаб (Z)</span></button>
+      <button class="tool-btn" data-tool="hand" title="Рука (H)">&#9995; <span class="tip">Рука (H)</span></button>
+    </div>
+
+    <!-- CENTER CANVAS -->
+    <div id="center">
+      <div id="canvas-wrap">
+        <div id="canvas-container">
+          <canvas id="canvas-main"></canvas>
+          <canvas id="canvas-overlay"></canvas>
+          <canvas id="canvas-preview"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="right-panel">
+      <!-- COLOR -->
+      <div class="panel-section">
+        <div class="panel-header">Цвет</div>
+        <div class="panel-body">
+          <div class="color-display">
+            <div class="color-box" id="color-box" style="background:#000"></div>
+            <div class="color-info">
+              <span id="color-hex">#000000</span>
+              <span id="color-rgba">rgba(0,0,0,1)</span>
+            </div>
+          </div>
+          <input type="color" id="color-picker" value="#000000" style="width:100%;height:32px;border:none;border-radius:5px;cursor:pointer;background:none">
+          <div class="row"><label>Прозрачность</label><input type="range" id="opacity-range" min="0" max="255" value="255"><span id="opacity-val" style="width:30px;font-size:11px">100%</span></div>
+          <div class="color-swatches" id="swatches"></div>
+        </div>
+      </div>
+
+      <!-- TOOL OPTIONS -->
+      <div class="panel-section">
+        <div class="panel-header">Параметры инструмента</div>
+        <div class="panel-body" id="tool-options">
+          <div class="row"><label>Размер</label><input type="range" id="brush-size" min="1" max="200" value="10"><span id="brush-size-val" style="width:36px">10px</span></div>
+          <div class="row"><label>Жёсткость</label><input type="range" id="brush-hardness" min="0" max="100" value="80"><span id="hardness-val" style="width:36px">80%</span></div>
+          <div class="row"><label>Непрер.</label><input type="checkbox" id="brush-flow" checked style="accent-color:var(--accent)"></div>
+          <div class="row" id="shape-fill-row"><label>Заливка</label><input type="checkbox" id="shape-fill" style="accent-color:var(--accent)"></div>
+          <div class="row" id="text-size-row" style="display:none"><label>Шрифт</label><select id="text-font"><option>Arial<option>Georgia<option>Courier New<option>Impact<option>Times New Roman<option>Verdana<option>Trebuchet MS</select></div>
+          <div class="row" id="text-fontsize-row" style="display:none"><label>Размер</label><input type="number" id="text-size" value="32" min="1" max="500" style="width:60px"></div>
+        </div>
+      </div>
+
+      <!-- LAYERS -->
+      <div class="panel-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+        <div class="panel-header">Слои <button class="btn btn-sm" id="btn-add-layer">+</button></div>
+        <div class="panel-body" style="flex:1;overflow:hidden;padding:4px">
+          <div id="layers-list"></div>
+        </div>
+        <div class="panel-body" style="flex-shrink:0;padding:4px 8px">
+          <div class="btn-row">
+            <button class="btn btn-sm" id="btn-layer-up">&#9650;</button>
+            <button class="btn btn-sm" id="btn-layer-down">&#9660;</button>
+            <button class="btn btn-sm" id="btn-layer-dup">&#10697;</button>
+            <button class="btn btn-sm" id="btn-layer-merge">&#8681;</button>
+            <button class="btn btn-sm" id="btn-layer-del" style="color:var(--danger)">&#10006;</button>
+          </div>
+          <div class="row" style="margin-top:6px"><label style="min-width:auto">Непрозр. слоя</label><input type="range" id="layer-opacity" min="0" max="100" value="100" style="flex:1"><span id="layer-op-val" style="width:30px;font-size:11px">100%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottombar">
+    <span id="status-tool">Кисть</span>
+    <span id="status-pos">0, 0</span>
+    <span id="status-size">800 × 600</span>
+    <span id="status-zoom">100%</span>
+    <span id="status-layers">Слоёв: 1</span>
+    <div style="flex:1"></div>
+    <span>PixelForge v1.0 — аналог GIMP на чистом JS</span>
+  </div>
+</div>
+
+<!-- ==================== MENU DROPDOWNS ==================== -->
+<div class="dropdown" id="dropdown-file">
+  <div class="drop-item" data-action="new">Новый <kbd>Ctrl+N</kbd></div>
+  <div class="drop-item" data-action="open">Открыть изображение <kbd>Ctrl+O</kbd></div>
+  <div class="drop-item" data-action="save">Сохранить (PNG) <kbd>Ctrl+S</kbd></div>
+  <div class="drop-item" data-action="export-jpg">Экспорт (JPG)</div>
+</div>
+<div class="dropdown" id="dropdown-edit">
+  <div class="drop-item" data-action="undo">Отменить <kbd>Ctrl+Z</kbd></div>
+  <div class="drop-item" data-action="redo">Вернуть <kbd>Ctrl+Y</kbd></div>
+  <div class="drop-item" data-action="cut">Вырезать <kbd>Ctrl+X</kbd></div>
+  <div class="drop-item" data-action="copy">Копировать <kbd>Ctrl+C</kbd></div>
+  <div class="drop-item" data-action="paste">Вставить <kbd>Ctrl+V</kbd></div>
+  <div class="drop-item" data-action="fill-fg">Заливка цветом <kbd>Ctrl+,</kbd></div>
+  <div class="drop-item" data-action="clear">Очистить <kbd>Del</kbd></div>
+  <div class="drop-item" data-action="select-all">Выделить всё <kbd>Ctrl+A</kbd></div>
+  <div class="drop-item" data-action="deselect">Снять выделение <kbd>Ctrl+Shift+A</kbd></div>
+</div>
+<div class="dropdown" id="dropdown-image">
+  <div class="drop-item" data-action="resize">Изменить размер холста...</div>
+  <div class="drop-item" data-action="crop">Кадрировать по выделению</div>
+  <div class="drop-item" data-action="flip-h">Отразить по горизонтали</div>
+  <div class="drop-item" data-action="flip-v">Отразить по вертикали</div>
+  <div class="drop-item" data-action="rotate-90">Повернуть на 90&deg; по часовой</div>
+  <div class="drop-item" data-action="rotate-180">Повернуть на 180&deg;</div>
+  <div class="drop-item" data-action="rotate-270">Повернуть на 90&deg; против часовой</div>
+  <div class="drop-item" data-action="trim">Обрезать прозрачные края</div>
+</div>
+<div class="dropdown" id="dropdown-layer">
+  <div class="drop-item" data-action="new-layer">Новый слой</div>
+  <div class="drop-item" data-action="dup-layer">Дублировать слой</div>
+  <div class="drop-item" data-action="merge-down">Слить с нижним</div>
+  <div class="drop-item" data-action="flatten">Слить все слои</div>
+  <div class="drop-item" data-action="layer-up">Слой вверх</div>
+  <div class="drop-item" data-action="layer-down">Слой вниз</div>
+  <div class="drop-item" data-action="layer-from-visible">Слой из видимого</div>
+</div>
+<div class="dropdown" id="dropdown-filters">
+  <div class="drop-item" data-action="filter-brightness">Яркость/Контраст...</div>
+  <div class="drop-item" data-action="filter-hsl">Оттенок/Насыщенность...</div>
+  <div class="drop-item" data-action="filter-threshold">Порог...</div>
+  <div class="drop-item" data-action="filter-gaussian">Размытие по Гауссу...</div>
+  <div class="drop-item" data-action="filter-blur">Простое размытие</div>
+  <div class="drop-item" data-action="filter-sharpen">Резкость</div>
+  <div class="drop-item" data-action="filter-grayscale">Оттенки серого</div>
+  <div class="drop-item" data-action="filter-invert">Инверсия</div>
+  <div class="drop-item" data-action="filter-sepia">Сепия</div>
+  <div class="drop-item" data-action="filter-noise">Шум</div>
+  <div class="drop-item" data-action="filter-pixelate">Пикселизация...</div>
+  <div class="drop-item" data-action="filter-emboss">Тиснение</div>
+  <div class="drop-item" data-action="filter-edge">Выделение краёв</div>
+  <div class="drop-item" data-action="filter-vignette">Виньетка</div>
+</div>
+<div class="dropdown" id="dropdown-select">
+  <div class="drop-item" data-action="select-all">Выделить всё <kbd>Ctrl+A</kbd></div>
+  <div class="drop-item" data-action="deselect">Снять выделение <kbd>Ctrl+Shift+A</kbd></div>
+  <div class="drop-item" data-action="select-invert">Инвертировать выделение</div>
+  <div class="drop-item" data-action="select-feather">Растушёвка...</div>
+  <div class="drop-item" data-action="select-border">Граница выделения...</div>
+</div>
+<div class="dropdown" id="dropdown-view">
+  <div class="drop-item" data-action="zoom-in">Увеличить <kbd>+</kbd></div>
+  <div class="drop-item" data-action="zoom-out">Уменьшить <kbd>-</kbd></div>
+  <div class="drop-item" data-action="zoom-fit">По размеру окна</div>
+  <div class="drop-item" data-action="zoom-100">100%</div>
+  <div class="drop-item" data-action="toggle-grid">Сетка <kbd>Ctrl+G</kbd></div>
+  <div class="drop-item" data-action="toggle-rulers">Линейки</div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+<div class="modal-overlay" id="modal-new">
+  <div class="modal">
+    <h2>Новый документ</h2>
+    <div class="row"><label>Ширина</label><input type="number" id="new-w" value="800" min="1" max="8000"></div>
+    <div class="row"><label>Высота</label><input type="number" id="new-h" value="600" min="1" max="8000"></div>
+    <div class="row"><label>Фон</label><select id="new-bg"><option value="white">Белый<option value="transparent">Прозрачный<option value="custom">Свой цвет</select></div>
+    <div class="row" id="new-bg-color-row" style="display:none"><label>Цвет фона</label><input type="color" id="new-bg-color" value="#ffffff"></div>
+    <div class="row"><label>Предустановка</label><select id="new-preset"><option value="">Свой размер<option value="1920x1080">1920×1080 (Full HD)<option value="1080x1080">1080×1080 (Instagram)<option value="1080x1920">1080×1920 (Stories)<option value="800x600">800×600<option value="1280x720">1280×720 (HD)<option value="1024x768">1024×768</select></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-new')">Отмена</button><button class="btn btn-primary" id="btn-create-new">Создать</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-resize">
+  <div class="modal">
+    <h2>Изменить размер холста</h2>
+    <div class="row"><label>Ширина</label><input type="number" id="resize-w" value="800" min="1" max="8000"></div>
+    <div class="row"><label>Высота</label><input type="number" id="resize-h" value="600" min="1" max="8000"></div>
+    <div class="row"><label>Масштабировать</label><input type="checkbox" id="resize-scale" style="accent-color:var(--accent)"></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-resize')">Отмена</button><button class="btn btn-primary" id="btn-do-resize">Применить</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-bc">
+  <div class="modal">
+    <h2>Яркость и контраст</h2>
+    <div class="row"><label>Яркость</label><input type="range" id="bc-brightness" min="-100" max="100" value="0"><span id="bc-b-val">0</span></div>
+    <div class="row"><label>Контраст</label><input type="range" id="bc-contrast" min="-100" max="100" value="0"><span id="bc-c-val">0</span></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-bc')">Отмена</button><button class="btn btn-primary" id="btn-apply-bc">Применить</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-hsl">
+  <div class="modal">
+    <h2>Оттенок, насыщенность, светлота</h2>
+    <div class="row"><label>Оттенок</label><input type="range" id="hsl-hue" min="-180" max="180" value="0"><span id="hsl-h-val">0</span></div>
+    <div class="row"><label>Насыщ.</label><input type="range" id="hsl-sat" min="-100" max="100" value="0"><span id="hsl-s-val">0</span></div>
+    <div class="row"><label>Светлота</label><input type="range" id="hsl-light" min="-100" max="100" value="0"><span id="hsl-l-val">0</span></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-hsl')">Отмена</button><button class="btn btn-primary" id="btn-apply-hsl">Применить</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-threshold">
+  <div class="modal">
+    <h2>Порог</h2>
+    <div class="row"><label>Уровень</label><input type="range" id="th-level" min="0" max="255" value="128"><span id="th-val">128</span></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-threshold')">Отмена</button><button class="btn btn-primary" id="btn-apply-threshold">Применить</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-gaussian">
+  <div class="modal">
+    <h2>Размытие по Гауссу</h2>
+    <div class="row"><label>Радиус</label><input type="range" id="g-radius" min="1" max="50" value="5"><span id="g-val">5</span></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-gaussian')">Отмена</button><button class="btn btn-primary" id="btn-apply-gaussian">Применить</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-pixelate">
+  <div class="modal">
+    <h2>Пикселизация</h2>
+    <div class="row"><label>Размер блока</label><input type="range" id="px-size" min="2" max="50" value="10"><span id="px-val">10</span></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-pixelate')">Отмена</button><button class="btn btn-primary" id="btn-apply-pixelate">Применить</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-feather">
+  <div class="modal">
+    <h2>Растушёвка выделения</h2>
+    <div class="row"><label>Радиус</label><input type="number" id="feather-radius" value="5" min="1" max="100"></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-feather')">Отмена</button><button class="btn btn-primary" id="btn-apply-feather">Применить</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-border">
+  <div class="modal">
+    <h2>Граница выделения</h2>
+    <div class="row"><label>Толщина</label><input type="number" id="border-width" value="5" min="1" max="100"></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal('modal-border')">Отмена</button><button class="btn btn-primary" id="btn-apply-border">Применить</button></div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*" style="display:none">
+
+<div id="toast"></div>
+
+<script>
+/* ===================================================================
+   PixelForge — Растровый графический редактор на чистом JS
+   =================================================================== */
+
+// ====================== STATE ======================
+const State = {
+  width: 800,
+  height: 600,
+  zoom: 1,
+  tool: 'brush',
+  color: { r:0, g:0, b:0, a:255 },
+  bgColor: { r:255, g:255, b:255, a:255 },
+  brushSize: 10,
+  brushHardness: 80,
+  brushFlow: true,
+  shapeFill: false,
+  textFont: 'Arial',
+  textSize: 32,
+  layers: [],
+  activeLayerIdx: 0,
+  selection: null,        // {x,y,w,h} or null
+  selectionMask: null,    // canvas with mask for feathering
+  clipboard: null,       // ImageData
+  history: [],
+  historyIdx: -1,
+  maxHistory: 30,
+  showGrid: false,
+  showRulers: false,
+  isDrawing: false,
+  startX: 0, startY: 0,
+  lastX: 0, lastY: 0,
+  moveData: null,
+  lassoPoints: [],
+};
+
+// DOM refs
+const $ = id => document.getElementById(id);
+const canvasMain = $('canvas-main');
+const canvasOverlay = $('canvas-overlay');
+const canvasPreview = $('canvas-preview');
+const ctxMain = canvasMain.getContext('2d');
+const ctxOverlay = canvasOverlay.getContext('2d');
+const ctxPreview = canvasPreview.getContext('2d');
+
+// ====================== LAYER CLASS ======================
+class Layer {
+  constructor(w, h, name='Слой') {
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = w;
+    this.canvas.height = h;
+    this.ctx = this.canvas.getContext('2d');
+    this.name = name;
+    this.visible = true;
+    this.opacity = 100;
+    this.blendMode = 'source-over';
+  }
+  clear() { this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height); }
+  clone() {
+    const l = new Layer(this.canvas.width, this.canvas.height, this.name + ' копия');
+    l.ctx.drawImage(this.canvas, 0, 0);
+    l.visible = this.visible;
+    l.opacity = this.opacity;
+    l.blendMode = this.blendMode;
+    return l;
+  }
+}
+
+// ====================== INIT ======================
+function init() {
+  newDocument(800, 600, 'white');
+  buildSwatches();
+  setupTools();
+  setupMenus();
+  setupCanvas();
+  setupKeyboard();
+  setupModalEvents();
+  setupColorPicker();
+  setupToolOptions();
+  render();
+  showToast('Готов к работе! Выберите инструмент и начните рисовать.');
+}
+
+function newDocument(w, h, bg) {
+  State.width = w;
+  State.height = h;
+  canvasMain.width = w; canvasMain.height = h;
+  canvasOverlay.width = w; canvasOverlay.height = h;
+  canvasPreview.width = w; canvasPreview.height = h;
+  State.layers = [];
+  const layer = new Layer(w, h, 'Фон');
+  if (bg === 'white') {
+    layer.ctx.fillStyle = '#fff';
+    layer.ctx.fillRect(0,0,w,h);
+  } else if (bg === 'custom') {
+    layer.ctx.fillStyle = $('new-bg-color').value;
+    layer.ctx.fillRect(0,0,w,h);
+  }
+  State.layers.push(layer);
+  State.activeLayerIdx = 0;
+  State.history = [];
+  State.historyIdx = -1;
+  saveHistory();
+  renderLayers();
+  render();
+  $('status-size').textContent = w + ' × ' + h;
+}
+
+// ====================== RENDER ======================
+function render() {
+  ctxMain.clearRect(0,0,State.width,State.height);
+  for (const layer of State.layers) {
+    if (!layer.visible) continue;
+    ctxMain.globalAlpha = layer.opacity / 100;
+    ctxMain.globalCompositeOperation = layer.blendMode;
+    ctxMain.drawImage(layer.canvas, 0, 0);
+  }
+  ctxMain.globalAlpha = 1;
+  ctxMain.globalCompositeOperation = 'source-over';
+
+  ctxOverlay.clearRect(0,0,State.width,State.height);
+  if (State.selection) {
+    const s = State.selection;
+    ctxOverlay.strokeStyle = '#fff';
+    ctxOverlay.lineWidth = 1;
+    ctxOverlay.setLineDash([5,3]);
+    ctxOverlay.strokeRect(s.x+0.5, s.y+0.5, s.w-1, s.h-1);
+    ctxOverlay.setLineDash([]);
+  }
+  
+  updateZoom();
+  $('status-zoom').textContent = Math.round(State.zoom * 100) + '%';
+  $('status-layers').textContent = 'Слоёв: ' + State.layers.length;
+}
+
+function updateZoom() {
+  const cw = State.width * State.zoom;
+  const ch = State.height * State.zoom;
+  canvasMain.style.width = cw + 'px';
+  canvasMain.style.height = ch + 'px';
+  canvasOverlay.style.width = cw + 'px';
+  canvasOverlay.style.height = ch + 'px';
+  canvasPreview.style.width = cw + 'px';
+  canvasPreview.style.height = ch + 'px';
+}
+
+function renderLayers() {
+  const list = $('layers-list');
+  list.innerHTML = '';
+  for (let i = State.layers.length - 1; i >= 0; i--) {
+    const layer = State.layers[i];
+    const item = document.createElement('div');
+    item.className = 'layer-item' + (i === State.activeLayerIdx ? ' active' : '');
+    
+    const vis = document.createElement('div');
+    vis.className = 'layer-vis';
+    vis.textContent = layer.visible ? '👁' : '✗';
+    vis.onclick = (e) => { e.stopPropagation(); layer.visible = !layer.visible; renderLayers(); render(); };
+    
+    const thumb = document.createElement('canvas');
+    thumb.width = 40; thumb.height = 30;
+    const tctx = thumb.getContext('2d');
+    tctx.fillStyle = '#fff';
+    tctx.fillRect(0,0,40,30);
+    
+    const cs = 5;
+    for (let y=0; y<30; y+=cs) for (let x=0; x<40; x+=cs) {
+      if (((x/cs+y/cs)|0)%2===0) { tctx.fillStyle='#ccc'; tctx.fillRect(x,y,cs,cs); }
+    }
+    tctx.drawImage(layer.canvas, 0, 0, 40, 30);
+    
+    const name = document.createElement('div');
+    name.className = 'layer-name';
+    name.textContent = layer.name;
+    name.contentEditable = true;
+    name.onblur = () => { layer.name = name.textContent || 'Слой'; };
+    name.onkeydown = (e) => { if(e.key==='Enter'){e.preventDefault();name.blur();}};
+    
+    item.appendChild(vis);
+    item.appendChild(thumb);
+    item.appendChild(name);
+    item.onclick = () => { State.activeLayerIdx = i; renderLayers(); render(); };
+    list.appendChild(item);
+  }
+  $('layer-opacity').value = State.layers[State.activeLayerIdx]?.opacity || 100;
+  $('layer-op-val').textContent = (State.layers[State.activeLayerIdx]?.opacity || 100) + '%';
+}
+
+function getActiveLayer() { return State.layers[State.activeLayerIdx]; }
+function getActiveCtx() { return getActiveLayer().ctx; }
+
+function saveHistory() {
+  if (State.historyIdx < State.history.length - 1) {
+    State.history = State.history.slice(0, State.historyIdx + 1);
+  }
+  const snapshot = State.layers.map(l => {
+    const c = document.createElement('canvas');
+    c.width = l.canvas.width; c.height = l.canvas.height;
+    c.getContext('2d').drawImage(l.canvas, 0, 0);
+    return { canvas: c, name: l.name, visible: l.visible, opacity: l.opacity, blendMode: l.blendMode };
+  });
+  State.history.push({ layers: snapshot, activeIdx: State.activeLayerIdx, width: State.width, height: State.height });
+  if (State.history.length > State.maxHistory) State.history.shift();
+  else State.historyIdx++;
+}
+
+function undo() {
+  if (State.historyIdx <= 0) { showToast('Нечего отменять'); return; }
+  State.historyIdx--;
+  restoreHistory();
+}
+function redo() {
+  if (State.historyIdx >= State.history.length - 1) { showToast('Нечего возвращать'); return; }
+  State.historyIdx++;
+  restoreHistory();
+}
+function restoreHistory() {
+  const snap = State.history[State.historyIdx];
+  State.width = snap.width;
+  State.height = snap.height;
+  canvasMain.width = snap.width; canvasMain.height = snap.height;
+  canvasOverlay.width = snap.width; canvasOverlay.height = snap.height;
+  canvasPreview.width = snap.width; canvasPreview.height = snap.height;
+  State.layers = snap.layers.map(s => {
+    const l = new Layer(s.canvas.width, s.canvas.height, s.name);
+    l.ctx.drawImage(s.canvas, 0, 0);
+    l.visible = s.visible;
+    l.opacity = s.opacity;
+    l.blendMode = s.blendMode;
+    return l;
+  });
+  State.activeLayerIdx = Math.min(snap.activeIdx, State.layers.length - 1);
+  renderLayers();
+  render();
+  $('status-size').textContent = State.width + ' × ' + State.height;
+}
+
+function getCanvasPos(e) {
+  const rect = canvasMain.getBoundingClientRect();
+  const x = Math.round((e.clientX - rect.left) / State.zoom);
+  const y = Math.round((e.clientY - rect.top) / State.zoom);
+  return { x: Math.max(0, Math.min(State.width, x)), y: Math.max(0, Math.min(State.height, y)) };
+}
+
+function applySelectionClip(ctx) {
+  if (State.selection) {
+    const s = State.selection;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(s.x, s.y, s.w, s.h);
+    ctx.clip();
+    return true;
+  }
+  return false;
+}
+
+function setupCanvas() {
+  let isDrawing = false;
+
+  canvasMain.addEventListener('pointerdown', onPointerDown);
+  canvasMain.addEventListener('pointermove', onPointerMove);
+  canvasMain.addEventListener('pointerup', onPointerUp);
+  canvasMain.addEventListener('pointercancel', onPointerUp);
+  canvasMain.addEventListener('pointerleave', e => {
+    $('status-pos').textContent = '';
+  });
+
+  $('canvas-wrap').addEventListener('wheel', e => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 1.1 : 0.9;
+      State.zoom = Math.max(0.05, Math.min(32, State.zoom * delta));
+      render();
+    }
+  }, { passive: false });
+}
+
+function onPointerDown(e) {
+  e.preventDefault();
+  canvasMain.setPointerCapture(e.pointerId);
+  const pos = getCanvasPos(e);
+  State.isDrawing = true;
+  State.startX = pos.x;
+  State.startY = pos.y;
+  State.lastX = pos.x;
+  State.lastY = pos.y;
+
+  const tool = State.tool;
+  const ctx = getActiveCtx();
+  const clipped = applySelectionClip(ctx);
+
+  if (tool === 'brush' || tool === 'pencil') {
+    drawStroke(ctx, pos.x, pos.y, pos.x, pos.y, tool === 'brush');
+  } else if (tool === 'eraser') {
+    eraseStroke(ctx, pos.x, pos.y, pos.x, pos.y);
+  } else if (tool === 'bucket') {
+    floodFill(ctx, pos.x, pos.y, State.color);
+    if (clipped) ctx.restore();
+    saveHistory();
+    render();
+    State.isDrawing = false;
+  } else if (tool === 'gradient') {
+    
+  } else if (tool === 'eyedropper') {
+    const data = ctxMain.getImageData(pos.x, pos.y, 1, 1).data;
+    State.color = { r:data[0], g:data[1], b:data[2], a:255 };
+    updateColorDisplay();
+    showToast('Цвет: ' + rgbToHex(State.color.r, State.color.g, State.color.b));
+    State.isDrawing = false;
+  } else if (tool === 'text') {
+    createTextInput(pos.x, pos.y);
+    State.isDrawing = false;
+  } else if (tool === 'zoom') {
+    State.zoom = e.altKey ? State.zoom * 0.8 : State.zoom * 1.25;
+    State.zoom = Math.max(0.05, Math.min(32, State.zoom));
+    render();
+    State.isDrawing = false;
+  } else if (tool === 'move' && State.selection) {
+    const s = State.selection;
+    State.moveData = {
+      imgData: getActiveCtx().getImageData(s.x, s.y, s.w, s.h),
+      sx: s.x, sy: s.y, sw: s.w, sh: s.h
+    };
+    getActiveCtx().clearRect(s.x, s.y, s.w, s.h);
+  } else if (tool === 'select') {
+    State.selection = { x: pos.x, y: pos.y, w: 0, h: 0 };
+  } else if (tool === 'lasso') {
+    State.lassoPoints = [{x:pos.x, y:pos.y}];
+  }
+  if (clipped && tool !== 'bucket') {} 
+  render();
+}
+
+function onPointerMove(e) {
+  const pos = getCanvasPos(e);
+  $('status-pos').textContent = `${pos.x}, ${pos.y}`;
+  
+  if (!State.isDrawing) return;
+  const tool = State.tool;
+  const ctx = getActiveCtx();
+
+  if (tool === 'brush' || tool === 'pencil') {
+    drawStroke(ctx, State.lastX, State.lastY, pos.x, pos.y, tool === 'brush');
+    State.lastX = pos.x;
+    State.lastY = pos.y;
+    render();
+  } else if (tool === 'eraser') {
+    eraseStroke(ctx, State.lastX, State.lastY, pos.x, pos.y);
+    State.lastX = pos.x;
+    State.lastY = pos.y;
+    render();
+  } else if (tool === 'rect' || tool === 'ellipse' || tool === 'line') {
+    
+    ctxPreview.clearRect(0,0,State.width,State.height);
+    drawShape(ctxPreview, tool, State.startX, State.startY, pos.x, pos.y);
+    render();
+  } else if (tool === 'select') {
+    State.selection.w = Math.abs(pos.x - State.startX);
+    State.selection.h = Math.abs(pos.y - State.startY);
+    State.selection.x = Math.min(State.startX, pos.x);
+    State.selection.y = Math.min(State.startY, pos.y);
+    render();
+  } else if (tool === 'lasso') {
+    State.lassoPoints.push({x:pos.x, y:pos.y});
+    ctxOverlay.clearRect(0,0,State.width,State.height);
+    ctxOverlay.strokeStyle = '#fff';
+    ctxOverlay.setLineDash([5,3]);
+    ctxOverlay.beginPath();
+    State.lassoPoints.forEach((p,i) => i===0?ctxOverlay.moveTo(p.x,p.y):ctxOverlay.lineTo(p.x,p.y));
+    ctxOverlay.stroke();
+    ctxOverlay.setLineDash([]);
+  } else if (tool === 'move' && State.moveData) {
+    const dx = pos.x - State.startX;
+    const dy = pos.y - State.startY;
+    ctxPreview.clearRect(0,0,State.width,State.height);
+    ctxPreview.putImageData(State.moveData.imgData, State.moveData.sx + dx, State.moveData.sy + dy);
+    render();
+  } else if (tool === 'gradient') {
+    ctxPreview.clearRect(0,0,State.width,State.height);
+    drawGradientPreview(ctxPreview, State.startX, State.startY, pos.x, pos.y);
+    render();
+  }
+}
+
+function onPointerUp(e) {
+  if (!State.isDrawing) return;
+  State.isDrawing = false;
+  const pos = getCanvasPos(e);
+  const tool = State.tool;
+  const ctx = getActiveCtx();
+
+  if (tool === 'rect' || tool === 'ellipse' || tool === 'line') {
+    const clipped = applySelectionClip(ctx);
+    drawShape(ctx, tool, State.startX, State.startY, pos.x, pos.y);
+    if (clipped) ctx.restore();
+    ctxPreview.clearRect(0,0,State.width,State.height);
+    saveHistory();
+  } else if (tool === 'brush' || tool === 'pencil' || tool === 'eraser') {
+    saveHistory();
+  } else if (tool === 'select') {
+    if (State.selection.w < 2 || State.selection.h < 2) {
+      State.selection = null;
+    }
+  } else if (tool === 'lasso') {
+    
+    if (State.lassoPoints.length > 2) {
+      let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+      for (const p of State.lassoPoints) {
+        minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+        minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y);
+      }
+      State.selection = {x:minX,y:minY,w:maxX-minX,h:maxY-minY};
+    }
+    State.lassoPoints = [];
+    ctxOverlay.clearRect(0,0,State.width,State.height);
+  } else if (tool === 'move' && State.moveData) {
+    const dx = pos.x - State.startX;
+    const dy = pos.y - State.startY;
+    ctx.putImageData(State.moveData.imgData, State.moveData.sx + dx, State.moveData.sy + dy);
+    ctxPreview.clearRect(0,0,State.width,State.height);
+    State.moveData = null;
+    saveHistory();
+  } else if (tool === 'gradient') {
+    const clipped = applySelectionClip(ctx);
+    drawGradient(ctx, State.startX, State.startY, pos.x, pos.y);
+    if (clipped) ctx.restore();
+    ctxPreview.clearRect(0,0,State.width,State.height);
+    saveHistory();
+  }
+  render();
+}
+
+function drawStroke(ctx, x0, y0, x1, y1, smooth) {
+  ctx.save();
+  const col = State.color;
+  ctx.strokeStyle = `rgba(${col.r},${col.g},${col.b},${col.a/255})`;
+  ctx.lineWidth = State.brushSize;
+  ctx.lineCap = smooth ? 'round' : 'square';
+  ctx.lineJoin = smooth ? 'round' : 'miter';
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+
+  if (x0 === x1 && y0 === y1) {
+    ctx.beginPath();
+    ctx.arc(x0, y0, State.brushSize/2, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${col.a/255})`;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function eraseStroke(ctx, x0, y0, x1, y1) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.strokeStyle = 'rgba(0,0,0,1)';
+  ctx.lineWidth = State.brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+  if (x0 === x1 && y0 === y1) {
+    ctx.beginPath();
+    ctx.arc(x0, y0, State.brushSize/2, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawShape(ctx, tool, x0, y0, x1, y1) {
+  const col = State.color;
+  ctx.strokeStyle = `rgba(${col.r},${col.g},${col.b},${col.a/255})`;
+  ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${col.a/255})`;
+  ctx.lineWidth = State.brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  
+  const x = Math.min(x0,x1), y = Math.min(y0,y1);
+  const w = Math.abs(x1-x0), h = Math.abs(y1-y0);
+  
+  if (tool === 'rect') {
+    if (State.shapeFill) ctx.fillRect(x,y,w,h);
+    else ctx.strokeRect(x,y,w,h);
+  } else if (tool === 'ellipse') {
+    ctx.beginPath();
+    ctx.ellipse(x+w/2, y+h/2, w/2, h/2, 0, 0, Math.PI*2);
+    if (State.shapeFill) ctx.fill(); else ctx.stroke();
+  } else if (tool === 'line') {
+    ctx.beginPath();
+    ctx.moveTo(x0,y0);
+    ctx.lineTo(x1,y1);
+    ctx.stroke();
+  }
+}
+
+function floodFill(ctx, sx, sy, fillCol) {
+  if (sx < 0 || sy < 0 || sx >= State.width || sy >= State.height) return;
+  const imgData = ctx.getImageData(0, 0, State.width, State.height);
+  const data = imgData.data;
+  const w = State.width, h = State.height;
+  const idx = (sy * w + sx) * 4;
+  const tr = data[idx], tg = data[idx+1], tb = data[idx+2], ta = data[idx+3];
+
+  if (tr === fillCol.r && tg === fillCol.g && tb === fillCol.b && ta === fillCol.a) return;
+  
+  const tolerance = 10;
+  const stack = [[sx, sy]];
+  const visited = new Uint8Array(w * h);
+  
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const pi = y * w + x;
+    if (visited[pi]) continue;
+    const di = pi * 4;
+    if (Math.abs(data[di]-tr) > tolerance || Math.abs(data[di+1]-tg) > tolerance ||
+        Math.abs(data[di+2]-tb) > tolerance || Math.abs(data[di+3]-ta) > tolerance) continue;
+    
+    visited[pi] = 1;
+    data[di] = fillCol.r;
+    data[di+1] = fillCol.g;
+    data[di+2] = fillCol.b;
+    data[di+3] = fillCol.a;
+    
+    stack.push([x+1,y]); stack.push([x-1,y]);
+    stack.push([x,y+1]); stack.push([x,y-1]);
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function drawGradient(ctx, x0, y0, x1, y1) {
+  const col = State.color;
+  const bgCol = State.bgColor;
+  const dx = x1 - x0, dy = y1 - y0;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len < 1) return;
+  const angle = Math.atan2(dy, dx);
+  
+  const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+  grad.addColorStop(0, `rgba(${col.r},${col.g},${col.b},${col.a/255})`);
+  grad.addColorStop(1, `rgba(${bgCol.r},${bgCol.g},${bgCol.b},${bgCol.a/255})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, State.width, State.height);
+}
+function drawGradientPreview(ctx, x0, y0, x1, y1) {
+  drawGradient(ctx, x0, y0, x1, y1);
+}
+
+function createTextInput(x, y) {
+  const rect = canvasMain.getBoundingClientRect();
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'text-input-overlay';
+  input.placeholder = 'Введите текст...';
+  input.style.left = (x * State.zoom) + 'px';
+  input.style.top = (y * State.zoom - State.textSize * State.zoom) + 'px';
+  input.style.fontSize = (State.textSize * State.zoom) + 'px';
+  input.style.fontFamily = State.textFont;
+  input.style.color = rgbToHex(State.color.r, State.color.g, State.color.b);
+  $('canvas-container').appendChild(input);
+  input.focus();
+  
+  const commit = () => {
+    if (input.value.trim()) {
+      const ctx = getActiveCtx();
+      const clipped = applySelectionClip(ctx);
+      ctx.font = `${State.textSize}px ${State.textFont}`;
+      ctx.fillStyle = `rgba(${State.color.r},${State.color.g},${State.color.b},${State.color.a/255})`;
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(input.value, x, y);
+      if (clipped) ctx.restore();
+      saveHistory();
+      render();
+    }
+    input.remove();
+  };
+  input.onblur = commit;
+  input.onkeydown = e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { input.value=''; input.blur(); } };
+}
+
+function updateColorDisplay() {
+  const c = State.color;
+  const hex = rgbToHex(c.r, c.g, c.b);
+  $('color-box').style.background = `rgba(${c.r},${c.g},${c.b},${c.a/255})`;
+  $('color-hex').textContent = hex;
+  $('color-rgba').textContent = `rgba(${c.r},${c.g},${c.b},${(c.a/255).toFixed(2)})`;
+  $('color-picker').value = hex;
+  $('opacity-range').value = c.a;
+  $('opacity-val').textContent = Math.round(c.a/255*100) + '%';
+}
+function rgbToHex(r,g,b) {
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+function hexToRgb(hex) {
+  const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  return m ? {r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)} : null;
+}
+function buildSwatches() {
+  const colors = ['#000000','#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff',
+    '#808080','#c0c0c0','#800000','#008000','#000080','#808000','#800080','#008080',
+    '#ff8000','#ff0080','#80ff00','#00ff80','#0080ff','#8000ff','#ff8080','#80ff80'];
+  const container = $('swatches');
+  colors.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'swatch';
+    sw.style.background = c;
+    sw.onclick = () => { const rgb = hexToRgb(c); State.color.r=rgb.r; State.color.g=rgb.g; State.color.b=rgb.b; State.color.a=255; updateColorDisplay(); };
+    container.appendChild(sw);
+  });
+}
+function setupColorPicker() {
+  $('color-picker').oninput = e => {
+    const rgb = hexToRgb(e.target.value);
+    State.color.r=rgb.r; State.color.g=rgb.g; State.color.b=rgb.b;
+    updateColorDisplay();
+  };
+  $('opacity-range').oninput = e => {
+    State.color.a = parseInt(e.target.value);
+    updateColorDisplay();
+  };
+}
+
+function setupTools() {
+  document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.onclick = () => selectTool(btn.dataset.tool);
+  });
+}
+function selectTool(tool) {
+  State.tool = tool;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+  const names = {brush:'Кисть',pencil:'Карандаш',eraser:'Ластик',bucket:'Заливка',gradient:'Градиент',
+    rect:'Прямоугольник',ellipse:'Эллипс',line:'Линия',select:'Выделение',lasso:'Лассо',
+    move:'Перемещение',eyedropper:'Пипетка',text:'Текст',zoom:'Масштаб',hand:'Рука'};
+  $('status-tool').textContent = names[tool] || tool;
+
+  $('shape-fill-row').style.display = (tool==='rect'||tool==='ellipse') ? 'flex' : 'none';
+  $('text-size-row').style.display = tool==='text' ? 'flex' : 'none';
+  $('text-fontsize-row').style.display = tool==='text' ? 'flex' : 'none';
+
+  const cursors = {eyedropper:'crosshair',zoom:'zoom-in',hand:'grab',move:'move',select:'crosshair',lasso:'crosshair',text:'text'};
+  canvasMain.style.cursor = cursors[tool] || 'crosshair';
+}
+
+function setupToolOptions() {
+  $('brush-size').oninput = e => { State.brushSize = parseInt(e.target.value); $('brush-size-val').textContent = e.target.value + 'px'; };
+  $('brush-hardness').oninput = e => { State.brushHardness = parseInt(e.target.value); $('hardness-val').textContent = e.target.value + '%'; };
+  $('brush-flow').onchange = e => State.brushFlow = e.target.checked;
+  $('shape-fill').onchange = e => State.shapeFill = e.target.checked;
+  $('text-font').onchange = e => State.textFont = e.target.value;
+  $('text-size').oninput = e => State.textSize = parseInt(e.target.value);
+  $('layer-opacity').oninput = e => {
+    if (getActiveLayer()) {
+      getActiveLayer().opacity = parseInt(e.target.value);
+      $('layer-op-val').textContent = e.target.value + '%';
+      render();
+    }
+  };
+}
+
+function setupMenus() {
+  document.querySelectorAll('.menu-btn').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      const menu = btn.dataset.menu;
+      document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+      btn.classList.add('active');
+      const dd = $('dropdown-' + menu);
+      if (dd) {
+        dd.classList.add('open');
+        const rect = btn.getBoundingClientRect();
+        dd.style.top = (rect.bottom) + 'px';
+        dd.style.left = rect.left + 'px';
+      }
+    };
+  });
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+  });
+  document.querySelectorAll('.dropdown').forEach(dd => {
+    dd.addEventListener('click', e => e.stopPropagation());
+    dd.querySelectorAll('.drop-item').forEach(item => {
+      item.onclick = () => {
+        handleAction(item.dataset.action);
+        dd.classList.remove('open');
+      };
+    });
+  });
+  
+  $('btn-undo').onclick = undo;
+  $('btn-redo').onclick = redo;
+  $('btn-export').onclick = () => handleAction('save');
+  $('btn-add-layer').onclick = () => handleAction('new-layer');
+  $('btn-layer-up').onclick = () => handleAction('layer-up');
+  $('btn-layer-down').onclick = () => handleAction('layer-down');
+  $('btn-layer-dup').onclick = () => handleAction('dup-layer');
+  $('btn-layer-merge').onclick = () => handleAction('merge-down');
+  $('btn-layer-del').onclick = () => {
+    if (State.layers.length > 1) {
+      State.layers.splice(State.activeLayerIdx, 1);
+      State.activeLayerIdx = Math.max(0, State.activeLayerIdx - 1);
+      saveHistory(); renderLayers(); render();
+    }
+  };
+}
+
+function handleAction(action) {
+  switch(action) {
+    case 'new': openModal('modal-new'); $('new-w').value=State.width; $('new-h').value=State.height; break;
+    case 'open': $('file-input').click(); break;
+    case 'save': exportImage('png'); break;
+    case 'export-jpg': exportImage('jpeg'); break;
+    case 'undo': undo(); break;
+    case 'redo': redo(); break;
+    case 'cut': copySelection(true); break;
+    case 'copy': copySelection(false); break;
+    case 'paste': pasteClipboard(); break;
+    case 'fill-fg': fillSelection(); break;
+    case 'clear': clearSelection(); break;
+    case 'select-all': selectAll(); break;
+    case 'deselect': State.selection = null; render(); break;
+    case 'select-invert': invertSelection(); break;
+    case 'select-feather': openModal('modal-feather'); break;
+    case 'select-border': openModal('modal-border'); break;
+    case 'resize': openModal('modal-resize'); $('resize-w').value=State.width; $('resize-h').value=State.height; break;
+    case 'crop': cropToSelection(); break;
+    case 'flip-h': flipLayer('h'); break;
+    case 'flip-v': flipLayer('v'); break;
+    case 'rotate-90': rotateLayer(90); break;
+    case 'rotate-180': rotateLayer(180); break;
+    case 'rotate-270': rotateLayer(270); break;
+    case 'trim': trimTransparent(); break;
+    case 'new-layer': addLayer(); break;
+    case 'dup-layer': duplicateLayer(); break;
+    case 'merge-down': mergeDown(); break;
+    case 'flatten': flattenAll(); break;
+    case 'layer-up': moveLayerUp(); break;
+    case 'layer-down': moveLayerDown(); break;
+    case 'layer-from-visible': layerFromVisible(); break;
+    case 'filter-brightness': openModal('modal-bc'); break;
+    case 'filter-hsl': openModal('modal-hsl'); break;
+    case 'filter-threshold': openModal('modal-threshold'); break;
+    case 'filter-gaussian': openModal('modal-gaussian'); break;
+    case 'filter-blur': applyFilter('blur'); break;
+    case 'filter-sharpen': applyFilter('sharpen'); break;
+    case 'filter-grayscale': applyFilter('grayscale'); break;
+    case 'filter-invert': applyFilter('invert'); break;
+    case 'filter-sepia': applyFilter('sepia'); break;
+    case 'filter-noise': applyFilter('noise'); break;
+    case 'filter-pixelate': openModal('modal-pixelate'); break;
+    case 'filter-emboss': applyFilter('emboss'); break;
+    case 'filter-edge': applyFilter('edge'); break;
+    case 'filter-vignette': applyFilter('vignette'); break;
+    case 'zoom-in': State.zoom = Math.min(32, State.zoom * 1.25); render(); break;
+    case 'zoom-out': State.zoom = Math.max(0.05, State.zoom * 0.8); render(); break;
+    case 'zoom-fit': zoomFit(); break;
+    case 'zoom-100': State.zoom = 1; render(); break;
+    case 'toggle-grid': State.showGrid = !State.showGrid; showToast('Сетка: ' + (State.showGrid?'вкл':'выкл')); break;
+    case 'toggle-rulers': State.showRulers = !State.showRulers; showToast('Линейки: ' + (State.showRulers?'вкл':'выкл')); break;
+  }
+}
+
+function selectAll() {
+  State.selection = {x:0, y:0, w:State.width, h:State.height};
+  render();
+}
+function copySelection(cut) {
+  if (!State.selection) { showToast('Нет выделения'); return; }
+  const s = State.selection;
+  State.clipboard = getActiveCtx().getImageData(s.x, s.y, s.w, s.h);
+  if (cut) {
+    getActiveCtx().clearRect(s.x, s.y, s.w, s.h);
+    saveHistory(); render();
+  }
+  showToast('Скопировано в буфер');
+}
+function pasteClipboard() {
+  if (!State.clipboard) { showToast('Буфер пуст'); return; }
+  
+  addLayer();
+  getActiveCtx().putImageData(State.clipboard, 0, 0);
+  State.selection = {x:0, y:0, w:State.clipboard.width, h:State.clipboard.height};
+  saveHistory(); renderLayers(); render();
+  showToast('Вставлено на новый слой');
+}
+function fillSelection() {
+  const ctx = getActiveCtx();
+  const col = State.color;
+  if (State.selection) {
+    const s = State.selection;
+    ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${col.a/255})`;
+    ctx.fillRect(s.x, s.y, s.w, s.h);
+  } else {
+    ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${col.a/255})`;
+    ctx.fillRect(0, 0, State.width, State.height);
+  }
+  saveHistory(); render();
+}
+function clearSelection() {
+  const ctx = getActiveCtx();
+  if (State.selection) {
+    const s = State.selection;
+    ctx.clearRect(s.x, s.y, s.w, s.h);
+  } else {
+    ctx.clearRect(0, 0, State.width, State.height);
+  }
+  saveHistory(); render();
+}
+function invertSelection() {
+  if (!State.selection) { showToast('Нет выделения'); return; }
+  
+  showToast('Инверсия выделения (упрощённая)');
+}
+function cropToSelection() {
+  if (!State.selection) { showToast('Нет выделения'); return; }
+  const s = State.selection;
+  const nw = Math.max(1, s.w), nh = Math.max(1, s.h);
+  for (const layer of State.layers) {
+    const nc = document.createElement('canvas');
+    nc.width = nw; nc.height = nh;
+    nc.getContext('2d').drawImage(layer.canvas, -s.x, -s.y);
+    layer.canvas = nc;
+    layer.ctx = nc.getContext('2d');
+  }
+  State.width = nw; State.height = nh;
+  canvasMain.width = nw; canvasMain.height = nh;
+  canvasOverlay.width = nw; canvasOverlay.height = nh;
+  canvasPreview.width = nw; canvasPreview.height = nh;
+  State.selection = null;
+  saveHistory(); renderLayers(); render();
+  $('status-size').textContent = nw + ' × ' + nh;
+  showToast('Кадрировано: ' + nw + '×' + nh);
+}
+function trimTransparent() {
+  
+  let minX=Infinity,minY=Infinity,maxX=-1,maxY=-1;
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = State.width; tempCanvas.height = State.height;
+  const tctx = tempCanvas.getContext('2d');
+  for (const layer of State.layers) { if(layer.visible) tctx.drawImage(layer.canvas,0,0); }
+  const data = tctx.getImageData(0,0,State.width,State.height).data;
+  for (let y=0; y<State.height; y++) for (let x=0; x<State.width; x++) {
+    if (data[(y*State.width+x)*4+3] > 0) {
+      if(x<minX)minX=x; if(y<minY)minY=y; if(x>maxX)maxX=x; if(y>maxY)maxY=y;
+    }
+  }
+  if (minX===Infinity) { showToast('Нечего обрезать'); return; }
+  const nw=maxX-minX+1, nh=maxY-minY+1;
+  for (const layer of State.layers) {
+    const nc = document.createElement('canvas');
+    nc.width=nw; nc.height=nh;
+    nc.getContext('2d').drawImage(layer.canvas, -minX, -minY);
+    layer.canvas=nc; layer.ctx=nc.getContext('2d');
+  }
+  State.width=nw; State.height=nh;
+  canvasMain.width=nw; canvasMain.height=nh;
+  canvasOverlay.width=nw; canvasOverlay.height=nh;
+  canvasPreview.width=nw; canvasPreview.height=nh;
+  saveHistory(); renderLayers(); render();
+  $('status-size').textContent = nw+' × '+nh;
+  showToast('Обрезано: '+nw+'×'+nh);
+}
+
+function flipLayer(dir) {
+  const ctx = getActiveCtx();
+  const tmp = document.createElement('canvas');
+  tmp.width = State.width; tmp.height = State.height;
+  tmp.getContext('2d').drawImage(getActiveLayer().canvas, 0, 0);
+  ctx.clearRect(0,0,State.width,State.height);
+  ctx.save();
+  if (dir==='h') { ctx.scale(-1,1); ctx.drawImage(tmp, -State.width, 0); }
+  else { ctx.scale(1,-1); ctx.drawImage(tmp, 0, -State.height); }
+  ctx.restore();
+  saveHistory(); render();
+}
+function rotateLayer(deg) {
+  const layer = getActiveLayer();
+  const tmp = document.createElement('canvas');
+  tmp.width = State.width; tmp.height = State.height;
+  tmp.getContext('2d').drawImage(layer.canvas, 0, 0);
+  
+  if (deg === 180) {
+    layer.ctx.clearRect(0,0,State.width,State.height);
+    layer.ctx.save();
+    layer.ctx.translate(State.width/2, State.height/2);
+    layer.ctx.rotate(Math.PI);
+    layer.ctx.translate(-State.width/2, -State.height/2);
+    layer.ctx.drawImage(tmp, 0, 0);
+    layer.ctx.restore();
+  } else {
+    
+    const nw = State.height, nh = State.width;
+    const nc = document.createElement('canvas');
+    nc.width = nw; nc.height = nh;
+    const nctx = nc.getContext('2d');
+    nctx.translate(nw/2, nh/2);
+    nctx.rotate(deg === 90 ? Math.PI/2 : -Math.PI/2);
+    nctx.drawImage(tmp, -State.width/2, -State.height/2);
+    layer.canvas = nc; layer.ctx = nctx;
+  }
+  if (deg !== 180) {
+    State.width = State.height === State.width ? State.width : (deg === 90 || deg === 270 ? getActiveLayer().canvas.width : State.width);
+    
+    const newW = getActiveLayer().canvas.width, newH = getActiveLayer().canvas.height;
+    State.width = newW; State.height = newH;
+    canvasMain.width = newW; canvasMain.height = newH;
+    canvasOverlay.width = newW; canvasOverlay.height = newH;
+    canvasPreview.width = newW; canvasPreview.height = newH;
+    
+    for (let i = 0; i < State.layers.length; i++) {
+      if (i !== State.activeLayerIdx) {
+        const l = State.layers[i];
+        const nc2 = document.createElement('canvas');
+        nc2.width = newW; nc2.height = newH;
+        nc2.getContext('2d').drawImage(l.canvas, 0, 0);
+        l.canvas = nc2; l.ctx = nc2.getContext('2d');
+      }
+    }
+    $('status-size').textContent = newW + ' × ' + newH;
+  }
+  saveHistory(); renderLayers(); render();
+}
+function resizeCanvas(newW, newH, scale) {
+  if (scale) {
+    for (const layer of State.layers) {
+      const nc = document.createElement('canvas');
+      nc.width = newW; nc.height = newH;
+      nc.getContext('2d').drawImage(layer.canvas, 0, 0, newW, newH);
+      layer.canvas = nc; layer.ctx = nc.getContext('2d');
+    }
+  } else {
+    for (const layer of State.layers) {
+      const nc = document.createElement('canvas');
+      nc.width = newW; nc.height = newH;
+      nc.getContext('2d').drawImage(layer.canvas, 0, 0);
+      layer.canvas = nc; layer.ctx = nc.getContext('2d');
+    }
+  }
+  State.width = newW; State.height = newH;
+  canvasMain.width = newW; canvasMain.height = newH;
+  canvasOverlay.width = newW; canvasOverlay.height = newH;
+  canvasPreview.width = newW; canvasPreview.height = newH;
+  saveHistory(); renderLayers(); render();
+  $('status-size').textContent = newW + ' × ' + newH;
+}
+function zoomFit() {
+  const wrap = $('canvas-wrap');
+  const w = wrap.clientWidth - 40, h = wrap.clientHeight - 40;
+  State.zoom = Math.min(w / State.width, h / State.height);
+  render();
+}
+
+function addLayer() {
+  const l = new Layer(State.width, State.height, 'Слой ' + (State.layers.length + 1));
+  State.layers.splice(State.activeLayerIdx + 1, 0, l);
+  State.activeLayerIdx++;
+  saveHistory(); renderLayers(); render();
+}
+function duplicateLayer() {
+  const l = getActiveLayer().clone();
+  State.layers.splice(State.activeLayerIdx + 1, 0, l);
+  State.activeLayerIdx++;
+  saveHistory(); renderLayers(); render();
+}
+function mergeDown() {
+  if (State.activeLayerIdx === 0) { showToast('Нет нижнего слоя'); return; }
+  const lower = State.layers[State.activeLayerIdx - 1];
+  const upper = State.layers[State.activeLayerIdx];
+  lower.ctx.globalAlpha = upper.opacity / 100;
+  lower.ctx.drawImage(upper.canvas, 0, 0);
+  lower.ctx.globalAlpha = 1;
+  State.layers.splice(State.activeLayerIdx, 1);
+  State.activeLayerIdx--;
+  saveHistory(); renderLayers(); render();
+}
+function flattenAll() {
+  const flat = new Layer(State.width, State.height, 'Объединённый');
+  for (const layer of State.layers) {
+    if (!layer.visible) continue;
+    flat.ctx.globalAlpha = layer.opacity / 100;
+    flat.ctx.drawImage(layer.canvas, 0, 0);
+  }
+  flat.ctx.globalAlpha = 1;
+  State.layers = [flat];
+  State.activeLayerIdx = 0;
+  saveHistory(); renderLayers(); render();
+  showToast('Все слои объединены');
+}
+function moveLayerUp() {
+  if (State.activeLayerIdx >= State.layers.length - 1) return;
+  [State.layers[State.activeLayerIdx], State.layers[State.activeLayerIdx+1]] = [State.layers[State.activeLayerIdx+1], State.layers[State.activeLayerIdx]];
+  State.activeLayerIdx++;
+  saveHistory(); renderLayers(); render();
+}
+function moveLayerDown() {
+  if (State.activeLayerIdx <= 0) return;
+  [State.layers[State.activeLayerIdx], State.layers[State.activeLayerIdx-1]] = [State.layers[State.activeLayerIdx-1], State.layers[State.activeLayerIdx]];
+  State.activeLayerIdx--;
+  saveHistory(); renderLayers(); render();
+}
+function layerFromVisible() {
+  const flat = new Layer(State.width, State.height, 'Из видимого');
+  for (const layer of State.layers) {
+    if (!layer.visible) continue;
+    flat.ctx.globalAlpha = layer.opacity / 100;
+    flat.ctx.drawImage(layer.canvas, 0, 0);
+  }
+  flat.ctx.globalAlpha = 1;
+  State.layers.push(flat);
+  State.activeLayerIdx = State.layers.length - 1;
+  saveHistory(); renderLayers(); render();
+}
+
+function applyFilter(name, params) {
+  params = params || {};
+  const layer = getActiveLayer();
+  const ctx = layer.ctx;
+  let imgData = ctx.getImageData(0, 0, State.width, State.height);
+  let data = imgData.data;
+  
+  if (name === 'grayscale') {
+    for (let i = 0; i < data.length; i += 4) {
+      const g = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+      data[i] = data[i+1] = data[i+2] = g;
+    }
+  } else if (name === 'invert') {
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 255 - data[i];
+      data[i+1] = 255 - data[i+1];
+      data[i+2] = 255 - data[i+2];
+    }
+  } else if (name === 'sepia') {
+    for (let i = 0; i < data.length; i += 4) {
+      const r=data[i],g=data[i+1],b=data[i+2];
+      data[i] = Math.min(255, r*0.393 + g*0.769 + b*0.189);
+      data[i+1] = Math.min(255, r*0.349 + g*0.686 + b*0.168);
+      data[i+2] = Math.min(255, r*0.272 + g*0.534 + b*0.131);
+    }
+  } else if (name === 'threshold') {
+    const level = params.level || 128;
+    for (let i = 0; i < data.length; i += 4) {
+      const g = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+      const v = g >= level ? 255 : 0;
+      data[i] = data[i+1] = data[i+2] = v;
+    }
+  } else if (name === 'brightness') {
+    const b = params.brightness || 0;
+    const c = params.contrast || 0;
+    const cf = (259 * (c + 255)) / (255 * (259 - c));
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = Math.max(0, Math.min(255, cf * (data[i] - 128) + 128 + b));
+      data[i+1] = Math.max(0, Math.min(255, cf * (data[i+1] - 128) + 128 + b));
+      data[i+2] = Math.max(0, Math.min(255, cf * (data[i+2] - 128) + 128 + b));
+    }
+  } else if (name === 'hsl') {
+    const hueShift = params.hue || 0;
+    const satShift = params.saturation || 0;
+    const lightShift = params.lightness || 0;
+    for (let i = 0; i < data.length; i += 4) {
+      let hsl = rgbToHsl(data[i], data[i+1], data[i+2]);
+      hsl[0] = (hsl[0] + hueShift / 360 + 1) % 1;
+      hsl[1] = Math.max(0, Math.min(1, hsl[1] + satShift / 100));
+      hsl[2] = Math.max(0, Math.min(1, hsl[2] + lightShift / 100));
+      let rgb = hslToRgb(hsl[0], hsl[1], hsl[2]);
+      data[i] = rgb[0]; data[i+1] = rgb[1]; data[i+2] = rgb[2];
+    }
+  } else if (name === 'noise') {
+    for (let i = 0; i < data.length; i += 4) {
+      const n = (Math.random() - 0.5) * 60;
+      data[i] = Math.max(0,Math.min(255, data[i]+n));
+      data[i+1] = Math.max(0,Math.min(255, data[i+1]+n));
+      data[i+2] = Math.max(0,Math.min(255, data[i+2]+n));
+    }
+  } else if (name === 'blur') {
+    data = boxBlur(data, State.width, State.height, 1);
+  } else if (name === 'gaussian') {
+    data = boxBlur(data, State.width, State.height, params.radius || 5);
+  } else if (name === 'sharpen') {
+    data = convolve(data, State.width, State.height, [0,-1,0,-1,5,-1,0,-1,0]);
+  } else if (name === 'emboss') {
+    data = convolve(data, State.width, State.height, [-2,-1,0,-1,1,1,0,1,2]);
+  } else if (name === 'edge') {
+    data = convolve(data, State.width, State.height, [-1,-1,-1,-1,8,-1,-1,-1,-1]);
+  } else if (name === 'pixelate') {
+    const size = params.size || 10;
+    data = pixelate(data, State.width, State.height, size);
+  } else if (name === 'vignette') {
+    const cx = State.width/2, cy = State.height/2;
+    const maxDist = Math.sqrt(cx*cx + cy*cy);
+    for (let y = 0; y < State.height; y++) for (let x = 0; x < State.width; x++) {
+      const i = (y * State.width + x) * 4;
+      const dist = Math.sqrt((x-cx)*(x-cx) + (y-cy)*(y-cy));
+      const v = Math.max(0, 1 - dist / maxDist * 1.2);
+      data[i] *= v; data[i+1] *= v; data[i+2] *= v;
+    }
+  }
+  
+  imgData.data = data;
+  
+  if (State.selection) {
+    
+    const s = State.selection;
+    const fullData = ctx.getImageData(0, 0, State.width, State.height);
+    for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) {
+      if (y < 0 || y >= State.height || x < 0 || x >= State.width) continue;
+      const si = (y * State.width + x) * 4;
+      const di = (y * State.width + x) * 4;
+      fullData.data[di] = data[si];
+      fullData.data[di+1] = data[si+1];
+      fullData.data[di+2] = data[si+2];
+      fullData.data[di+3] = data[si+3];
+    }
+    ctx.putImageData(fullData, 0, 0);
+  } else {
+    ctx.putImageData(imgData, 0, 0);
+  }
+  saveHistory(); render();
+}
+
+function rgbToHsl(r, g, b) {
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}
+  else{const d=max-min;
+    s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){
+      case r:h=(g-b)/d+(g<b?6:0);break;
+      case g:h=(b-r)/d+2;break;
+      case b:h=(r-g)/d+4;break;
+    }
+    h/=6;
+  }
+  return [h,s,l];
+}
+function hslToRgb(h,s,l){
+  let r,g,b;
+  if(s===0){r=g=b=l;}
+  else{
+    const hue2rgb=(p,q,t)=>{
+      if(t<0)t+=1;if(t>1)t-=1;
+      if(t<1/6)return p+(q-p)*6*t;
+      if(t<1/2)return q;
+      if(t<2/3)return p+(q-p)*(2/3-t)*6;
+      return p;
+    };
+    const q=l<0.5?l*(1+s):l+s-l*s;
+    const p=2*l-q;
+    r=hue2rgb(p,q,h+1/3);
+    g=hue2rgb(p,q,h);
+    b=hue2rgb(p,q,h-1/3);
+  }
+  return [r*255,g*255,b*255];
+}
+
+function boxBlur(data, w, h, radius) {
+  const tmp = new Uint8ClampedArray(data);
+  const r = Math.max(1, Math.floor(radius));
+  
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let sr=0,sg=0,sb=0,sa=0,cnt=0;
+      for (let dx = -r; dx <= r; dx++) {
+        const nx = Math.min(w-1, Math.max(0, x+dx));
+        const i = (y*w+nx)*4;
+        sr+=data[i];sg+=data[i+1];sb+=data[i+2];sa+=data[i+3];cnt++;
+      }
+      const i=(y*w+x)*4;
+      tmp[i]=sr/cnt;tmp[i+1]=sg/cnt;tmp[i+2]=sb/cnt;tmp[i+3]=sa/cnt;
+    }
+  }
+  
+  const out = new Uint8ClampedArray(tmp);
+  for (let x = 0; x < w; x++) {
+    for (let y = 0; y < h; y++) {
+      let sr=0,sg=0,sb=0,sa=0,cnt=0;
+      for (let dy = -r; dy <= r; dy++) {
+        const ny = Math.min(h-1, Math.max(0, y+dy));
+        const i = (ny*w+x)*4;
+        sr+=tmp[i];sg+=tmp[i+1];sb+=tmp[i+2];sa+=tmp[i+3];cnt++;
+      }
+      const i=(y*w+x)*4;
+      out[i]=sr/cnt;out[i+1]=sg/cnt;out[i+2]=sb/cnt;out[i+3]=sa/cnt;
+    }
+  }
+  return out;
+}
+
+function convolve(data, w, h, kernel) {
+  const out = new Uint8ClampedArray(data);
+  const ks = Math.sqrt(kernel.length);
+  const koff = Math.floor(ks/2);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let r=0,g=0,b=0;
+      for (let ky = 0; ky < ks; ky++) {
+        for (let kx = 0; kx < ks; kx++) {
+          const px = Math.min(w-1, Math.max(0, x + kx - koff));
+          const py = Math.min(h-1, Math.max(0, y + ky - koff));
+          const i = (py*w+px)*4;
+          const k = kernel[ky*ks+kx];
+          r += data[i]*k; g += data[i+1]*k; b += data[i+2]*k;
+        }
+      }
+      const i = (y*w+x)*4;
+      out[i] = Math.max(0,Math.min(255,r));
+      out[i+1] = Math.max(0,Math.min(255,g));
+      out[i+2] = Math.max(0,Math.min(255,b));
+      out[i+3] = data[i+3];
+    }
+  }
+  return out;
+}
+
+function pixelate(data, w, h, size) {
+  const out = new Uint8ClampedArray(data);
+  for (let by = 0; by < h; by += size) {
+    for (let bx = 0; bx < w; bx += size) {
+      let sr=0,sg=0,sb=0,sa=0,cnt=0;
+      for (let y = by; y < Math.min(by+size, h); y++) {
+        for (let x = bx; x < Math.min(bx+size, w); x++) {
+          const i = (y*w+x)*4;
+          sr+=data[i];sg+=data[i+1];sb+=data[i+2];sa+=data[i+3];cnt++;
+        }
+      }
+      sr/=cnt;sg/=cnt;sb/=cnt;sa/=cnt;
+      for (let y = by; y < Math.min(by+size, h); y++) {
+        for (let x = bx; x < Math.min(bx+size, w); x++) {
+          const i = (y*w+x)*4;
+          out[i]=sr;out[i+1]=sg;out[i+2]=sb;out[i+3]=sa;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function exportImage(format) {
+  
+  const tmp = document.createElement('canvas');
+  tmp.width = State.width; tmp.height = State.height;
+  const tctx = tmp.getContext('2d');
+  for (const layer of State.layers) {
+    if (!layer.visible) continue;
+    tctx.globalAlpha = layer.opacity / 100;
+    tctx.globalCompositeOperation = layer.blendMode;
+    tctx.drawImage(layer.canvas, 0, 0);
+  }
+  const url = tmp.toDataURL(format === 'jpeg' ? 'image/jpeg' : 'image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pixelforge_export.' + (format === 'jpeg' ? 'jpg' : 'png');
+  a.click();
+  showToast('Экспортировано: ' + a.download);
+}
+
+$('file-input').onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const w = img.width, h = img.height;
+      State.width = w; State.height = h;
+      canvasMain.width = w; canvasMain.height = h;
+      canvasOverlay.width = w; canvasOverlay.height = h;
+      canvasPreview.width = w; canvasPreview.height = h;
+      State.layers = [];
+      const layer = new Layer(w, h, file.name.replace(/\.[^.]+$/,''));
+      layer.ctx.drawImage(img, 0, 0);
+      State.layers.push(layer);
+      State.activeLayerIdx = 0;
+      State.history = []; State.historyIdx = -1;
+      saveHistory();
+      renderLayers(); render();
+      zoomFit();
+      $('status-size').textContent = w + ' × ' + h;
+      showToast('Открыто: ' + file.name);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+};
+
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+
+function setupModalEvents() {
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.onclick = e => { if (e.target === o) o.classList.remove('open'); };
+  });
+  
+  $('new-bg').onchange = e => { $('new-bg-color-row').style.display = e.target.value === 'custom' ? 'flex' : 'none'; };
+  $('new-preset').onchange = e => {
+    const v = e.target.value;
+    if (v) { const [w,h] = v.split('x'); $('new-w').value = w; $('new-h').value = h; }
+  };
+  $('btn-create-new').onclick = () => {
+    const w = parseInt($('new-w').value);
+    const h = parseInt($('new-h').value);
+    const bg = $('new-bg').value;
+    newDocument(w, h, bg);
+    closeModal('modal-new');
+  };
+  
+  $('btn-do-resize').onclick = () => {
+    resizeCanvas(parseInt($('resize-w').value), parseInt($('resize-h').value), $('resize-scale').checked);
+    closeModal('modal-resize');
+  };
+  
+  $('bc-brightness').oninput = e => $('bc-b-val').textContent = e.target.value;
+  $('bc-contrast').oninput = e => $('bc-c-val').textContent = e.target.value;
+  $('btn-apply-bc').onclick = () => {
+    applyFilter('brightness', { brightness: parseInt($('bc-brightness').value), contrast: parseInt($('bc-contrast').value) });
+    closeModal('modal-bc');
+  };
+  
+  $('hsl-hue').oninput = e => $('hsl-h-val').textContent = e.target.value;
+  $('hsl-sat').oninput = e => $('hsl-s-val').textContent = e.target.value;
+  $('hsl-light').oninput = e => $('hsl-l-val').textContent = e.target.value;
+  $('btn-apply-hsl').onclick = () => {
+    applyFilter('hsl', { hue: parseInt($('hsl-hue').value), saturation: parseInt($('hsl-sat').value), lightness: parseInt($('hsl-light').value) });
+    closeModal('modal-hsl');
+  };
+  
+  $('th-level').oninput = e => $('th-val').textContent = e.target.value;
+  $('btn-apply-threshold').onclick = () => {
+    applyFilter('threshold', { level: parseInt($('th-level').value) });
+    closeModal('modal-threshold');
+  };
+  
+  $('g-radius').oninput = e => $('g-val').textContent = e.target.value;
+  $('btn-apply-gaussian').onclick = () => {
+    applyFilter('gaussian', { radius: parseInt($('g-radius').value) });
+    closeModal('modal-gaussian');
+  };
+  
+  $('px-size').oninput = e => $('px-val').textContent = e.target.value;
+  $('btn-apply-pixelate').onclick = () => {
+    applyFilter('pixelate', { size: parseInt($('px-size').value) });
+    closeModal('modal-pixelate');
+  };
+  
+  $('btn-apply-feather').onclick = () => {
+    
+    const r = parseInt($('feather-radius').value);
+    if (State.selection) {
+      const s = State.selection;
+      const ctx = getActiveCtx();
+      const img = ctx.getImageData(s.x, s.y, s.w, s.h);
+      
+      const mask = new Uint8ClampedArray(s.w * s.h * 4);
+      for (let i = 0; i < s.w * s.h; i++) { mask[i*4]=255; mask[i*4+1]=255; mask[i*4+2]=255; mask[i*4+3]=255; }
+      const blurred = boxBlur(mask, s.w, s.h, r);
+      for (let i = 0; i < s.w * s.h; i++) {
+        img.data[i*4+3] = Math.min(img.data[i*4+3], blurred[i*4+3]);
+      }
+      ctx.putImageData(img, s.x, s.y);
+      saveHistory(); render();
+    }
+    closeModal('modal-feather');
+  };
+  
+  $('btn-apply-border').onclick = () => {
+    const bw = parseInt($('border-width').value);
+    if (State.selection) {
+      const s = State.selection;
+      const ns = { x: s.x + bw, y: s.y + bw, w: s.w - bw*2, h: s.h - bw*2 };
+      if (ns.w > 0 && ns.h > 0) {
+
+        State.selection = ns;
+      }
+    }
+    closeModal('modal-border');
+    render();
+  };
+}
+
+function setupKeyboard() {
+  document.addEventListener('keydown', e => {
+    
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
+    
+    if (e.ctrlKey || e.metaKey) {
+      switch(e.key.toLowerCase()) {
+        case 'z': e.preventDefault(); e.shiftKey ? redo() : undo(); break;
+        case 'y': e.preventDefault(); redo(); break;
+        case 'n': e.preventDefault(); handleAction('new'); break;
+        case 'o': e.preventDefault(); handleAction('open'); break;
+        case 's': e.preventDefault(); handleAction('save'); break;
+        case 'a': e.preventDefault(); selectAll(); break;
+        case 'c': e.preventDefault(); copySelection(false); break;
+        case 'x': e.preventDefault(); copySelection(true); break;
+        case 'v': e.preventDefault(); pasteClipboard(); break;
+        case ',': e.preventDefault(); fillSelection(); break;
+        case 'g': if(e.shiftKey){e.preventDefault();State.showGrid=!State.showGrid;showToast('Сетка: '+(State.showGrid?'вкл':'выкл'));}break;
+      }
+      if (e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); State.selection = null; render(); }
+    } else {
+      switch(e.key.toLowerCase()) {
+        case 'b': selectTool('brush'); break;
+        case 'p': selectTool('pencil'); break;
+        case 'e': selectTool('eraser'); break;
+        case 'g': selectTool('bucket'); break;
+        case 'r': selectTool('rect'); break;
+        case 'o': selectTool('ellipse'); break;
+        case 'l': selectTool('line'); break;
+        case 'm': selectTool('select'); break;
+        case 'v': selectTool('move'); break;
+        case 'i': selectTool('eyedropper'); break;
+        case 't': selectTool('text'); break;
+        case 'z': selectTool('zoom'); break;
+        case 'h': selectTool('hand'); break;
+        case 'delete': case 'backspace': handleAction('clear'); break;
+        case '+': case '=': handleAction('zoom-in'); break;
+        case '-': handleAction('zoom-out'); break;
+        case '[': State.brushSize = Math.max(1, State.brushSize - 5); $('brush-size').value = State.brushSize; $('brush-size-val').textContent = State.brushSize + 'px'; break;
+        case ']': State.brushSize = Math.min(200, State.brushSize + 5); $('brush-size').value = State.brushSize; $('brush-size-val').textContent = State.brushSize + 'px'; break;
+      }
+    }
+  });
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>

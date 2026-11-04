@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Браузер</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --surface: #14161d;
+    --surface-2: #1c1f28;
+    --surface-3: #242834;
+    --border: #2b3040;
+    --text: #e9ebf2;
+    --muted: #8d93a5;
+    --accent: #7aa2ff;
+    --accent-soft: rgba(122, 162, 255, 0.15);
+    --danger: #ff6b6b;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; }
+
+  .browser {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ===== Вкладки ===== */
+  .tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 10px 12px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 9px 18px;
+    cursor: pointer;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    user-select: none;
+    position: relative;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+
+  .tab:hover { background: var(--surface-2); color: var(--text); }
+
+  .tab.active {
+    background: var(--surface-2);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .tab.active::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  /* ===== Панель управления ===== */
+  .toolbar {
+    padding: 8px 12px;
+    background: var(--surface-2);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .icon-btn:hover { background: var(--surface-3); color: var(--text); }
+  .icon-btn:active { transform: scale(0.94); }
+
+  .url-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .url-wrap .search-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--muted);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .url-input {
+    width: 100%;
+    padding: 9px 14px 9px 36px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .url-input::placeholder { color: var(--muted); }
+
+  .url-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .go-btn {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #0b0d12;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+
+  .go-btn:hover { filter: brightness(1.1); }
+  .go-btn:active { transform: scale(0.96); }
+
+  /* ===== Контент ===== */
+  .frame-area {
+    flex: 1;
+    position: relative;
+    background: var(--bg);
+  }
+
+  .frame-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  .welcome {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--muted);
+  }
+
+  .welcome h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .welcome p { margin: 0; font-size: 14px; }
+</style>
+<script src=".data/SHINKORscripts/SHINKORdriver1.js"></script>
+<script src=".data/SHINKORscripts/SHINKORdriver2.js"></script>
+<script src=".data/SHINKORscripts/SHINKORdriver3.js"></script>
+<script src=".data/SHINKORscripts/SHINKORdriver4.js"></script>
+<script src=".data/SHINKORscripts/SHINKORdriver5.js"></script>
+<script src=".data/SHINKORscripts/SHINKORdriver6.js"></script>
+</head>
+<body>
+  <div class="browser">
+    <!-- Вкладки -->
+    <div class="tabs">
+      <div class="tab active" data-tab="tab1">Вкладка 1</div>
+      <div class="tab" data-tab="tab2">Вкладка 2</div>
+      <div class="tab" data-tab="tab3">Вкладка 3</div>
+      <div class="tab" data-tab="tab4">Вкладка 4</div>
+    </div>
+
+    <!-- Панель управления -->
+    <div class="toolbar">
+      <button class="icon-btn" title="Назад" onclick="goBack()">←</button>
+      <button class="icon-btn" title="Вперёд" onclick="goForward()">→</button>
+      <button class="icon-btn" title="Обновить" onclick="reloadPage()">⟳</button>
+      <div class="url-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" class="url-input" placeholder="Введите URL или поисковый запрос">
+      </div>
+      <button class="go-btn" onclick="loadUrl()">Перейти</button>
+    </div>
+
+    <!-- Контейнеры для iframe (4 вкладки) -->
+    <div class="frame-area">
+      <div class="frame-container" id="tab1Container">
+        <div class="welcome">
+          <h1>Новая вкладка</h1>
+          <p>Введите адрес сайта или поисковый запрос выше</p>
+        </div>
+      </div>
+      <div class="frame-container" id="tab2Container" style="display: none;">
+        <div class="welcome">
+          <h1>Новая вкладка</h1>
+          <p>Введите адрес сайта или поисковый запрос выше</p>
+        </div>
+      </div>
+      <div class="frame-container" id="tab3Container" style="display: none;">
+        <div class="welcome">
+          <h1>Новая вкладка</h1>
+          <p>Введите адрес сайта или поисковый запрос выше</p>
+        </div>
+      </div>
+      <div class="frame-container" id="tab4Container" style="display: none;">
+        <div class="welcome">
+          <h1>Новая вкладка</h1>
+          <p>Введите адрес сайта или поисковый запрос выше</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Текущая активная вкладка
+    let activeTab = 'tab1';
+
+    // Хранилище для iframe и их истории
+    const tabsData = {
+      tab1: { iframe: null, history: [], currentIndex: -1 },
+      tab2: { iframe: null, history: [], currentIndex: -1 },
+      tab3: { iframe: null, history: [], currentIndex: -1 },
+      tab4: { iframe: null, history: [], currentIndex: -1 }
+    };
+
+    // ===== Переписывание ссылок _blank -> _self внутри iframe =====
+
+    // Обрабатываем документ внутри iframe: меняем target="_blank" на target="_self"
+    // и добавляем <base target="_self">, чтобы все последующие переходы тоже открывались в текущей вкладке.
+    function rewriteIframeLinks(iframe) {
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc || !doc.body) return;
+
+        // 1. Меняем уже существующие ссылки с target="_blank"
+        doc.querySelectorAll('a[target="_blank"]').forEach(a => {
+          a.setAttribute('target', '_self');
+        });
+
+        // 2. Добавляем базовый тег: любые новые ссылки по умолчанию открываются в текущем окне
+        if (doc.head && !doc.querySelector('base[data-rewritten]')) {
+          const base = doc.createElement('base');
+          base.setAttribute('target', '_self');
+          base.setAttribute('data-rewritten', '1');
+          doc.head.insertBefore(base, doc.head.firstChild);
+        }
+
+        // 3. Следим за динамически добавляемыми ссылками
+        if (!doc.body.__linkObserver) {
+          const observer = new MutationObserver(mutations => {
+            mutations.forEach(m => {
+              m.addedNodes.forEach(node => {
+                if (node.nodeType !== 1) return;
+                if (node.tagName === 'A' && node.getAttribute('target') === '_blank') {
+                  node.setAttribute('target', '_self');
+                } else if (node.querySelectorAll) {
+                  node.querySelectorAll('a[target="_blank"]').forEach(a => {
+                    a.setAttribute('target', '_self');
+                  });
+                }
+              });
+              if (m.type === 'attributes' && m.target.tagName === 'A' &&
+                  m.target.getAttribute('target') === '_blank') {
+                m.target.setAttribute('target', '_self');
+              }
+            });
+          });
+          observer.observe(doc.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['target'] });
+          doc.body.__linkObserver = observer;
+        }
+      } catch (e) {
+        // Документ с другого домена — браузер не даёт к нему доступ (политика same-origin).
+        // В этом случае переписать ссылки изнутри родительской страницы невозможно.
+      }
+    }
+
+    // ===== Переключение вкладок =====
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        activeTab = tab.dataset.tab;
+
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        for (let i = 1; i <= 4; i++) {
+          document.getElementById(`tab${i}Container`).style.display =
+            (activeTab === `tab${i}`) ? 'block' : 'none';
+        }
+
+        const currentUrl = tabsData[activeTab].history[tabsData[activeTab].currentIndex] || '';
+        document.querySelector('.url-input').value = currentUrl;
+      });
+    });
+
+    // ===== Загрузка URL или поиск =====
+    function loadUrl() {
+      const urlInput = document.querySelector('.url-input');
+      const query = urlInput.value.trim();
+      if (!query) return;
+
+      let url;
+
+      // Если ввод похож на URL (есть точка и нет пробелов) — открываем как адрес
+      if (query.includes('.') && !query.includes(' ')) {
+        url = query.startsWith('http') ? query : 'https://' + query;
+      } else {
+        // Иначе — это поисковый запрос
+        url = 'https://www.bing.com/search?q=' + encodeURIComponent(query) + '&setmkt=ru-RU&PC=EMMX01&form=LWS002&scope=web';
+      }
+
+      loadPage(url);
+    }
+
+    // ===== Загрузить страницу в активную вкладку =====
+    function loadPage(url) {
+      const tab = tabsData[activeTab];
+
+      // Обновляем историю
+      if (tab.currentIndex === tab.history.length - 1) {
+        tab.history.push(url);
+        tab.currentIndex++;
+      } else {
+        // Если пользователь перешёл назад/вперёд, а потом ввёл новый запрос
+        tab.history = tab.history.slice(0, tab.currentIndex + 1);
+        tab.history.push(url);
+        tab.currentIndex = tab.history.length - 1;
+      }
+
+      // Создаём новый iframe
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.sandbox = 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation';
+
+      // Переписываем ссылки после каждой загрузки страницы в iframe
+      iframe.addEventListener('load', () => rewriteIframeLinks(iframe));
+
+      // Вставляем в контейнер
+      const container = document.getElementById(`${activeTab}Container`);
+      container.innerHTML = '';
+      container.appendChild(iframe);
+
+      // Сохраняем iframe
+      tab.iframe = iframe;
+      document.querySelector('.url-input').value = url;
+    }
+
+    // ===== Обновить страницу =====
+    function reloadPage() {
+      const tab = tabsData[activeTab];
+      if (tab.iframe) {
+        tab.iframe.src = tab.iframe.src;
+      } else {
+        loadUrl();
+      }
+    }
+
+    // ===== Переход назад =====
+    function goBack() {
+      const tab = tabsData[activeTab];
+      if (tab.currentIndex > 0) {
+        tab.currentIndex--;
+        loadPage(tab.history[tab.currentIndex]);
+      }
+    }
+
+    // ===== Переход вперёд =====
+    function goForward() {
+      const tab = tabsData[activeTab];
+      if (tab.currentIndex < tab.history.length - 1) {
+        tab.currentIndex++;
+        loadPage(tab.history[tab.currentIndex]);
+      }
+    }
+
+    // ===== Enter в поле ввода =====
+    document.querySelector('.url-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loadUrl();
+    });
+  </script>
+</body>
+</html>

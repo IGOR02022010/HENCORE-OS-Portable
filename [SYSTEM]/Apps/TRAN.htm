@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+
+        .translator-container {
+            background: rgba(0,0,0,0.0);
+            padding: 2rem;
+            border-radius: 8px;
+            width: 50%;
+            min-width: 600px;
+        }
+        h2 { text-align: center; color: #333; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+        select {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #0056b3; }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        #result {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-left: 5px solid #28a745;
+            min-height: 40px;
+            word-break: break-word;
+        }
+        .loading { color: #666; font-style: italic; }
+    </style>
+
+<div class="translator-container">
+
+    <div class="controls">
+        <select id="fromLang">
+            <option value="en">Английский (EN)</option>
+            <option value="ru" selected>Русский (RU)</option>
+            <option value="es">Испанский (ES)</option>
+            <option value="fr">Французский (FR)</option>
+            <option value="de">Немецкий (DE)</option>
+        </select>
+        
+        <select id="toLang">
+            <option value="ru" selected>Русский (RU)</option>
+            <option value="en">Английский (EN)</option>
+            <option value="es">Испанский (ES)</option>
+            <option value="fr">Французский (FR)</option>
+            <option value="de">Немецкий (DE)</option>
+        </select>
+    </div>
+
+    <textarea id="inputText" placeholder="Введите текст для перевода..."></textarea>
+    
+    <button class="buttongrey" onclick="translateText()">Перевести</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    
+    const API_URL = 'https://api.mymemory.translated.net/get';
+
+    async function translateText() {
+        const input = document.getElementById('inputText').value.trim();
+        const fromLang = document.getElementById('fromLang').value;
+        const toLang = document.getElementById('toLang').value;
+        const resultDiv = document.getElementById('result');
+
+        if (!input) {
+            resultDiv.innerHTML = '<span style="color: red;">Пожалуйста, введите текст!</span>';
+            return;
+        }
+
+        resultDiv.textContent = 'Перевод...';
+
+        try {
+            const response = await fetch(`${API_URL}?q=${encodeURIComponent(input)}&langpair=${fromLang}|${toLang}`);
+
+            if (!response.ok) {
+                throw new Error('Ошибка сети или сервера');
+            }
+
+            const data = await response.json();
+            const translatedText = data.responseData?.translatedText || 'Перевод не получен';
+            resultDiv.textContent = translatedText;
+
+        } catch (error) {
+            console.error(error);
+            resultDiv.innerHTML = `<span style="color: red;">Произошла ошибка: \${error.message}</span>`;
+        }
+    }
+</script>
+
+ 

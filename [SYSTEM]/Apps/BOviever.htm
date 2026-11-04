@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Буфер обмена</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2230;
+    --border: #2d333b;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-2: #3fb950;
+    --danger: #f85149;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #1a2332 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 16px;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 {
+    font-size: 26px; font-weight: 600; letter-spacing: 0.5px;
+    text-align: center; margin-bottom: 6px;
+  }
+  .subtitle { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+  .actions { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+  button {
+    border: none; border-radius: var(--radius); padding: 12px 22px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    background: var(--accent); color: #0d1117;
+    transition: transform .15s, filter .15s;
+  }
+  button:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  button:active { transform: translateY(0); }
+  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  button.success { background: var(--accent-2); }
+  button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+  .badge {
+    font-size: 12px; font-weight: 600; padding: 4px 12px;
+    border-radius: 999px; letter-spacing: .5px; white-space: nowrap;
+  }
+  .badge.text   { background: rgba(88,166,255,.15); color: var(--accent); }
+  .badge.image  { background: rgba(63,185,80,.15);  color: var(--accent-2); }
+  .badge.file   { background: rgba(210,153,34,.15);  color: #d29922; }
+  .badge.html   { background: rgba(188,140,255,.15); color: #bc8cff; }
+  .card-buttons { display: flex; gap: 8px; }
+  .card-buttons button { padding: 8px 16px; font-size: 13px; }
+  pre {
+    background: #0a0e14; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; font-size: 13px; font-family: Consolas, monospace;
+    white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto;
+    color: #c9d1d9;
+  }
+  img.preview {
+    max-width: 100%; max-height: 400px; border-radius: 8px;
+    border: 1px solid var(--border); display: block;
+  }
+  .file-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .file-icon { font-size: 22px; }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-meta { font-size: 12px; color: var(--muted); }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--accent-2); color: #0d1117; font-weight: 600;
+    padding: 12px 24px; border-radius: var(--radius); font-size: 14px;
+    transition: transform .3s ease; z-index: 10;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .error { color: var(--danger); font-size: 14px; text-align: center; margin-top: 10px; min-height: 18px; }
+  .hint { color: var(--muted); font-size: 13px; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📋 Буфер обмена</h1>
+  <p class="subtitle">Автоматически определяет тип содержимого: текст, изображения или файлы</p>
+
+  <div class="actions">
+    <button id="btnRead">Получить из буфера</button>
+  </div>
+  <p class="hint">Или нажмите Ctrl+V в области вставки ниже (работает во всех браузерах)</p>
+
+  <div id="pasteZone" tabindex="0"
+       style="margin:16px 0; border:2px dashed var(--border); border-radius:12px;
+              padding:24px; text-align:center; color:var(--muted); outline:none;
+              transition: border-color .2s;">
+    Кликните сюда и нажмите <b>Ctrl+V</b>
+  </div>
+
+  <div id="errorBox" class="error"></div>
+  <div id="results"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+const results = document.getElementById("results");
+const errorBox = document.getElementById("errorBox");
+const toast = document.getElementById("toast");
+
+function notify(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  setTimeout(() => { errorBox.textContent = ""; }, 4000);
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + " Б";
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " КБ";
+  return (bytes / 1048576).toFixed(2) + " МБ";
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function detectTextKind(text) {
+  const t = text.trim();
+  if (!t) return { label: "пусто", cls: "text" };
+  try { JSON.parse(t); return { label: "JSON", cls: "html" }; } catch (e) {}
+  if (/^<(html|!doctype|\?xml|svg)/i.test(t)) return { label: "HTML/XML", cls: "html" };
+  if (/^https?:\/\/\S+$/i.test(t)) return { label: "ссылка", cls: "text" };
+  return { label: "текст · " + t.length + " симв.", cls: "text" };
+}
+
+function addTextCard(text, htmlText) {
+  const kind = detectTextKind(text);
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML =
+    '<div class="card-header">' +
+      '<span class="badge ' + kind.cls + '">📝 ' + kind.label + "</span>" +
+      '<div class="card-buttons">' +
+        '<button class="secondary" data-act="copy">Копировать</button>' +
+        (htmlText ? '<button class="secondary" data-act="copyhtml">Копировать как HTML</button>' : "") +
+        '<button class="success" data-act="download">Скачать .txt</button>' +
+      "</div>" +
+    "</div>" +
+    "<pre>" + text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</pre>";
+
+  const escaped = JSON.stringify(text); 
+  card.setAttribute("data-text", escaped);
+
+  card.querySelector('[data-act="copy"]').addEventListener("click", async () => {
+    await navigator.clipboard.writeText(text);
+    notify("Текст скопирован в буфер");
+  });
+  if (htmlText) {
+    card.querySelector('[data-act="copyhtml"]').addEventListener("click", async () => {
+      await navigator.clipboard.write([
+        new ClipboardItem({ "text/html": new Blob([htmlText], { type: "text/html" }) })
+      ]);
+      notify("HTML скопирован");
+    });
+  }
+  card.querySelector('[data-act="download"]').addEventListener("click", () => {
+    downloadBlob(new Blob([text], { type: "text/plain;charset=utf-8" }),
+      "clipboard-" + Date.now() + ".txt");
+  });
+  results.prepend(card);
+}
+
+function addImageCard(blob) {
+  const url = URL.createObjectURL(blob);
+  const ext = (blob.type.split("/")[1] || "png").replace("jpeg", "jpg");
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML =
+    '<div class="card-header">' +
+      '<span class="badge image">🖼️ изображение · ' + blob.type + " · " + fmtSize(blob.size) + "</span>" +
+      '<div class="card-buttons">' +
+        '<button class="secondary" data-act="copy">Копировать</button>' +
+        '<button class="success" data-act="download">Скачать .' + ext + "</button>" +
+      "</div>" +
+    "</div>" +
+    '<img class="preview" alt="Изображение из буфера">';
+  card.querySelector("img").src = url;
+
+  card.querySelector('[data-act="copy"]').addEventListener("click", async () => {
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    notify("Изображение скопировано в буфер");
+  });
+  card.querySelector('[data-act="download"]').addEventListener("click", () => {
+    downloadBlob(blob, "clipboard-" + Date.now() + "." + ext);
+  });
+  results.prepend(card);
+}
+
+function addFilesCard(files) {
+  const card = document.createElement("div");
+  card.className = "card";
+  const icon = { "application/pdf": "📄", "text/plain": "📄" };
+  card.innerHTML = '<div class="card-header"><span class="badge file">📁 файлов: ' + files.length + "</span></div>";
+
+  files.forEach(f => {
+    const row = document.createElement("div");
+    row.className = "file-item";
+    const ext = f.name.includes(".") ? f.name.split(".").pop() : "bin";
+    row.innerHTML =
+      '<span class="file-icon">' + (f.type.startsWith("image/") ? "🖼️" : (icon[f.type] || "📄")) + "</span>" +
+      '<div class="file-info">' +
+        '<div class="file-name"></div>' +
+        '<div class="file-meta">' + (f.type || "неизвестный тип") + " · " + fmtSize(f.size) + "</div>" +
+      "</div>" +
+      '<div class="card-buttons">' +
+        '<button class="secondary" data-act="copy">Копировать</button>' +
+        '<button class="success" data-act="download">Скачать</button>' +
+      "</div>";
+    row.querySelector(".file-name").textContent = f.name;
+
+    row.querySelector('[data-act="copy"]').addEventListener("click", async () => {
+      await navigator.clipboard.write([new ClipboardItem({ [f.type || "application/octet-stream"]: f })]);
+      notify("«" + f.name + "» скопирован в буфер");
+    });
+    row.querySelector('[data-act="download"]').addEventListener("click", () => downloadBlob(f, f.name));
+    card.appendChild(row);
+  });
+  results.prepend(card);
+}
+
+async function readClipboard() {
+  errorBox.textContent = "";
+  try {
+    const items = await navigator.clipboard.read();
+    let found = false;
+
+    for (const item of items) {
+      const types = item.types;
+
+      if (types.includes("Files")) {
+        const files = await Promise.all(
+          Array.from(await item.getType("Files")).map ? [] : [] 
+        );
+      }
+      const fileTypes = types.filter(t => t.startsWith("Files") || t.includes("text/_moz_htmlinfo"));
+
+      for (const t of types) {
+        if (t === "text/plain" || t === "text/html" || t.startsWith("image/")) continue;
+        
+      }
+
+      if (types.some(t => t.startsWith("image/"))) {
+        const t = types.find(t => t.startsWith("image/"));
+        const blob = await item.getType(t);
+        addImageCard(blob);
+        found = true;
+        continue;
+      }
+      if (types.includes("text/plain")) {
+        const blob = await item.getType("text/plain");
+        const text = await blob.text();
+        let htmlText = null;
+        if (types.includes("text/html")) {
+          htmlText = await (await item.getType("text/html")).text();
+        }
+        addTextCard(text, htmlText);
+        found = true;
+        continue;
+      }
+      if (types.includes("text/html")) {
+        const html = await (await item.getType("text/html")).text();
+        addTextCard(html, html);
+        found = true;
+      }
+    }
+    if (!found) showError("Буфер пуст или содержит неподдерживаемый формат");
+  } catch (err) {
+    if (err.name === "NotAllowedError") {
+      showError("Доступ к буферу запрещён. Разрешите его в адресной строке (значок замка) или используйте Ctrl+V.");
+    } else {
+      showError("Не удалось прочитать буфер: " + err.message);
+    }
+  }
+}
+
+function handlePaste(e) {
+  e.preventDefault();
+  errorBox.textContent = "";
+  const dt = e.clipboardData;
+  let found = false;
+
+  if (dt.files && dt.files.length) {
+    addFilesCard(Array.from(dt.files));
+    found = true;
+  }
+  for (const item of dt.items) {
+    if (item.type.startsWith("image/")) {
+      addImageCard(item.getAsFile());
+      found = true;
+    }
+  }
+  const html = dt.getData("text/html");
+  const text = dt.getData("text/plain");
+  if (text) { addTextCard(text, html || null); found = true; }
+  else if (html) { addTextCard(html, html); found = true; }
+
+  if (!found) showError("Не удалось определить содержимое буфера");
+}
+
+document.getElementById("btnRead").addEventListener("click", readClipboard);
+
+const pasteZone = document.getElementById("pasteZone");
+pasteZone.addEventListener("paste", handlePaste);
+pasteZone.addEventListener("click", () => pasteZone.focus());
+</script>
+</body>
+</html>

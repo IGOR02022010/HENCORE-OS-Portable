@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="JSmin/codemirror.min.css">
+<link rel="stylesheet" href="JSmin/dialog.min.css">
+<link rel="stylesheet" href="JSmin/dracula.min.css">
+<link rel="stylesheet" href="JSmin/material-darker.min.css">
+<link rel="stylesheet" href="JSmin/simplescrollbars.min.css">
+<link rel="stylesheet" href="JSmin/all.min.css">
+<link rel="stylesheet" href="JSmin/simplescrollbars.min.css">
+<link rel="stylesheet" href="JSmin/show-hint.min.css">
+<link rel="stylesheet" href="JSmin/foldgutter.min.css">
+
+<style>
+:root {
+  --bg: #1e1e2e;
+  --bg-soft: #252537;
+  --bg-panel: #2a2a3d;
+  --accent: #82aaff;
+  --accent-2: #c792ea;
+  --text: #d4d4e4;
+  --text-dim: #6b6b85;
+  --border: #3a3a50;
+  --green: #c3e88d;
+  --red: #f07178;
+  --orange: #ffcb6b;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  height: 52px;
+}
+.toolbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  margin-right: auto;
+  color: var(--accent);
+}
+.toolbar-brand i { color: var(--orange); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:active { transform: scale(.96); }
+.btn-primary { background: var(--accent); color: #1a1a2a; border-color: var(--accent); font-weight: 600; }
+.btn-primary:hover { background: #9bb8ff; border-color: #9bb8ff; color: #1a1a2a; }
+.btn-danger:hover { border-color: var(--red); color: var(--red); }
+
+.tabs-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 10px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-shrink: 0;
+  min-height: 38px;
+}
+.tabs-bar::-webkit-scrollbar { height: 4px; }
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 7px 14px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+  position: relative;
+  top: 1px;
+}
+.tab:hover { color: var(--text); background: var(--bg-panel); }
+.tab.active {
+  background: var(--bg);
+  color: var(--accent);
+  border-color: var(--border);
+}
+.tab .lang-icon { font-size: 11px; opacity: .7; }
+.tab .close-btn {
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0;
+  transition: all .15s;
+}
+.tab:hover .close-btn { opacity: .6; }
+.tab .close-btn:hover { opacity: 1; background: var(--red); color: #fff; }
+.tab-add {
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.tab-add:hover { color: var(--accent); background: var(--bg-panel); }
+
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.editor-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+.preview-pane {
+  width: 45%;
+  min-width: 200px;
+  display: none;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: #fff;
+}
+.preview-pane.visible { display: flex; }
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  height: 38px;
+}
+.preview-header span { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+.preview-header .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
+.preview-actions { margin-left: auto; display: flex; gap: 6px; }
+.preview-actions button {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .15s;
+}
+.preview-actions button:hover { color: var(--accent); border-color: var(--accent); }
+#previewFrame { flex: 1; border: none; background: #fff; }
+
+.CodeMirror {
+  flex: 1;
+  height: 100% !important;
+  font-size: 14px;
+  line-height: 1.55;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+}
+.CodeMirror-gutters { border-right: 1px solid var(--border); background: var(--bg-soft); }
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 14px;
+  background: var(--bg-soft);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  height: 28px;
+}
+.statusbar .sep { color: var(--border); }
+.statusbar .dot-live {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  margin-right: 5px;
+}
+.statusbar .dot-live.off { background: var(--text-dim); }
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+}
+.modal h3 { margin-bottom: 16px; color: var(--accent); }
+.modal label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-dim); }
+.modal input, .modal select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 14px;
+  outline: none;
+}
+.modal input:focus, .modal select:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+.toast-container {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 10px 18px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  animation: slideIn .25s ease;
+}
+.toast.success { border-left-color: var(--green); }
+.toast.error { border-left-color: var(--red); }
+@keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+
+.splitter {
+  width: 4px;
+  background: var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.splitter:hover { background: var(--accent); }
+</style>
+
+<!-- TOOLBAR -->
+<div  class="toolbar">
+  <div class="toolbar-brand"> </div>
+  <button class="btn" id="newFileBtn"><img src="assets/d_create.png" alt="ICON43" style="height: 19px; width: 19px; "> Создать</button>
+  <button class="btn" id="openFileBtn"><img src="assets/d_open.png" alt="ICON43" style="height: 19px; width: 19px; "> Открыть</button>
+  <button class="btn" id="saveFileBtn"><img src="assets/d_save.png" alt="ICON43" style="height: 19px; width: 19px; "> Сохранить</button>
+  <button class="btn" id="runBtn"><img src="assets/d_run.png" alt="ICON43" style="height: 19px; width: 19px; "> Выполнить</button>
+  <button class="btn" id="togglePreviewBtn"><img src="assets/d_appbar.png" alt="ICON43" style="height: 19px; width: 19px; "> Предпросмотр</button>
+  <button class="btn btn-danger" id="clearBtn"><img src="assets/d_close.png" alt="ICON43" style="height: 19px; width: 19px; "> Очистить</button>
+  <input type="file" id="fileInput" hidden>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar" id="tabsBar">
+  <button class="tab-add" id="tabAdd" title="Новый файл"><img src="assets/ic_add_24dp.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+  <div class="editor-pane" id="editorPane">
+    <textarea id="editor"></textarea>
+  </div>
+  <div class="splitter" id="splitter" style="display:none;"></div>
+  <div class="preview-pane" id="previewPane">
+    <div class="preview-header">
+      <span class="dot"></span>
+      <span>Предпросмотр</span>
+      <div class="preview-actions">
+        <button id="refreshPreview" title="Обновить"><img src="assets/d_refresh.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+        <button id="openInNewTab" title="Открыть в новой вкладке"><img src="assets/ic_web_24dp.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+      </div>
+    </div>
+    <iframe id="previewFrame" sandbox="allow-scripts allow-modals allow-forms allow-popups allow-same-origin"></iframe>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <span><span class="dot-live" id="dotLive"></span><span id="statusText">Готово</span></span>
+  <span class="sep">|</span>
+  <span id="langLabel">JavaScript</span>
+  <span class="sep">|</span>
+  <span id="cursorPos">Стр 1, Кол 1</span>
+  <span class="sep">|</span>
+  <span id="charCount">0 символов</span>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Новый файл</h3>
+    <label for="fileNameInput">Имя файла:</label>
+    <input type="text" id="fileNameInput" placeholder="index.html" autocomplete="off">
+    <label for="langSelect">Язык:</label>
+    <select id="langSelect">
+      <option value="html">HTML</option>
+      <option value="javascript">JavaScript</option>
+      <option value="python">Python</option>
+      <option value="css">CSS</option>
+      <option value="text/x-bat">Batch</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" id="modalCancel">Отмена</button>
+      <button class="btn btn-primary" id="modalOk">Создать</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- CodeMirror JS -->
+
+<script src="JSmin/brace-fold.min.js"></script>
+<script src="JSmin/clike.min.js"></script>
+<script src="JSmin/closebrackets.min.js"></script>
+<script src="JSmin/closetag.min.js"></script>
+<script src="JSmin/codemirror.min.js"></script>
+<script src="JSmin/comment.min.js"></script>
+<script src="JSmin/comment-fold.min.js"></script>
+<script src="JSmin/css.min.js"></script>
+<script src="JSmin/css-hint.min.js"></script>
+<script src="JSmin/dialog.min.js"></script>
+<script src="JSmin/foldcode.min.js"></script>
+<script src="JSmin/foldgutter.min.js"></script>
+<script src="JSmin/html-hint.min.js"></script>
+<script src="JSmin/htmlmixed.min.js"></script>
+<script src="JSmin/indent-fold.min.js"></script>
+<script src="JSmin/javascript.min.js"></script>
+<script src="JSmin/javascript-hint.min.js"></script>
+<script src="JSmin/matchbrackets.min.js"></script>
+<script src="JSmin/matchtags.min.js"></script>
+<script src="JSmin/pascal.min.js"></script>
+<script src="JSmin/python.min.js"></script>
+<script src="JSmin/search.min.js"></script>
+<script src="JSmin/searchcursor.min.js"></script>
+<script src="JSmin/shell.min.js"></script>
+<script src="JSmin/show-hint.min.js"></script>
+<script src="JSmin/sublime.min.js"></script>
+<script src="JSmin/textile.min.js"></script>
+<script src="JSmin/xml.min.js"></script>
+<script src="JSmin/xml-fold.min.js"></script>
+<script src="JSmin/html-hint.min.js"></script>
+<script src="JSmin/javascript-hint.min.js"></script>
+<script src="JSmin/show-hint.min.js"></script>
+<script src="JSmin/matchtags.min.js"></script>
+<script src="JSmin/textile.min.js"></script>
+<script src="JSmin/pascal.min.js"></script>
+<script src="JSmin/sublime.min.js"></script>
+<script src="JSmin/css-hint.min.js"></script>
+
+<script>
+
+const files = [];       
+let activeFileId = null;
+let nextId = 1;
+let autoPreview = true;
+
+const extToMode = {
+  js: 'javascript', mjs: 'javascript', jsx: 'javascript',
+  html: 'htmlmixed', htm: 'htmlmixed',
+  css: 'css', scss: 'css',
+  py: 'python',
+  bat: 'text/x-bat', cmd: 'text/x-bat', ps1: 'text/x-bat',
+  txt: 'text/plain', json: 'application/json'
+};
+
+const modeToLabel = {
+  'javascript': 'JavaScript',
+  'htmlmixed': 'HTML',
+  'css': 'CSS',
+  'python': 'Python',
+  'text/x-bat': 'Batch',
+  'text/plain': 'Текст',
+  'application/json': 'JSON'
+};
+
+const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+  mode: 'javascript',
+  theme: 'material-darker',
+  lineNumbers: true,
+  lineWrapping: false,
+  matchBrackets: true,
+  autoCloseBrackets: true,
+  autoCloseTags: true,
+  matchTags: { bothTags: true },
+  indentUnit: 2,
+  tabSize: 2,
+  indentWithTabs: false,
+  foldGutter: true,
+  gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+  keyMap: 'sublime',
+  extraKeys: {
+    'Ctrl-S': () => saveFile(),
+    'Cmd-S': () => saveFile(),
+    'Ctrl-Enter': () => runPreview(),
+    'Cmd-Enter': () => runPreview(),
+    'Ctrl-/': 'toggleComment',
+    'Cmd-/': 'toggleComment',
+    'Ctrl-Space': 'autocomplete',
+    'Cmd-Space': 'autocomplete',
+    'Ctrl-F': 'find',
+    'Cmd-F': 'find',
+    'Tab': cm => {
+      if (cm.somethingSelected()) cm.indentSelection('add');
+      else cm.replaceSelection('  ', 'end');
+    }
+  }
+});
+
+editor.on('change', () => {
+  const f = getFile(activeFileId);
+  if (f) {
+    f.code = editor.getValue();
+    f.saved = false;
+    updateTabLabel(f);
+    updateStatus();
+    if (autoPreview) schedulePreview();
+  }
+});
+
+editor.on('cursorActivity', () => {
+  const c = editor.getCursor();
+  document.getElementById('cursorPos').textContent = `Стр ${c.line+1}, Кол ${c.ch+1}`;
+});
+
+function getFile(id) { return files.find(f => f.id === id); }
+
+function getExt(name) {
+  const parts = name.split('.');
+  return parts.length > 1 ? parts.pop().toLowerCase() : '';
+}
+
+function guessMode(name) {
+  const ext = getExt(name);
+  return extToMode[ext] || 'text/plain';
+}
+
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+function updateStatus() {
+  const f = getFile(activeFileId);
+  if (f) {
+    document.getElementById('langLabel').textContent = modeToLabel[f.lang] || f.lang;
+    document.getElementById('charCount').textContent = `${f.code.length} символов`;
+    document.getElementById('statusText').textContent = f.saved ? 'Сохранено' : 'Изменено';
+    document.getElementById('dotLive').classList.toggle('off', !autoPreview);
+  }
+}
+
+function renderTabs() {
+  const bar = document.getElementById('tabsBar');
+  
+  bar.querySelectorAll('.tab').forEach(t => t.remove());
+  files.forEach(f => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (f.id === activeFileId ? ' active' : '');
+    tab.dataset.id = f.id;
+    tab.innerHTML = `
+      <span class="lang-icon"><img src="assets/ic_doc_24dp.png" alt="ICON43" style="height: 19px; width: 19px; "></span>
+      <span class="tab-name">${f.name}${f.saved ? '' : ' •'}</span>
+      <span class="close-btn"><img src="assets/d_close.png" alt="ICON43" style="height: 19px; width: 19px; "></span>
+    `;
+    tab.addEventListener('click', e => {
+      if (e.target.closest('.close-btn')) { closeFile(f.id); e.stopPropagation(); return; }
+      switchFile(f.id);
+    });
+    bar.insertBefore(tab, document.getElementById('tabAdd'));
+  });
+}
+
+function getIcon(lang) {
+  const icons = {
+    'javascript': 'fa-brands fa-js',
+    'htmlmixed': 'fa-brands fa-html5',
+    'css': 'fa-brands fa-css3-alt',
+    'python': 'fa-brands fa-python',
+    'text/x-bat': 'fa-solid fa-terminal',
+    'text/plain': 'fa-solid fa-file',
+    'application/json': 'fa-solid fa-brackets-curly'
+  };
+  return icons[lang] || 'fa-solid fa-file';
+}
+
+function updateTabLabel(f) {
+  const tab = document.querySelector(`.tab[data-id="${f.id}"] .tab-name`);
+  if (tab) tab.textContent = `${f.name}${f.saved ? '' : ' •'}`;
+}
+
+function createFile(name, lang, code = '') {
+  const f = { id: nextId++, name, lang: lang || guessMode(name), code, saved: true };
+  files.push(f);
+  activeFileId = f.id;
+  switchFile(f.id);
+  renderTabs();
+  return f;
+}
+
+function switchFile(id) {
+  activeFileId = id;
+  const f = getFile(id);
+  if (!f) return;
+  editor.setValue(f.code);
+  editor.setOption('mode', f.lang);
+  editor.focus();
+  editor.setCursor({ line: 0, ch: 0 });
+  renderTabs();
+  updateStatus();
+  
+  if (f.lang === 'htmlmixed' || f.lang === 'javascript') {
+    if (!document.getElementById('previewPane').classList.contains('visible')) {
+      togglePreview();
+    }
+    runPreview();
+  }
+}
+
+function closeFile(id) {
+  const idx = files.findIndex(f => f.id === id);
+  if (idx === -1) return;
+  files.splice(idx, 1);
+  if (activeFileId === id) {
+    if (files.length > 0) {
+      switchFile(files[Math.max(0, idx - 1)].id);
+    } else {
+      activeFileId = null;
+      editor.setValue('');
+      document.getElementById('previewPane').classList.remove('visible');
+      document.getElementById('splitter').style.display = 'none';
+      showToast('Все файлы закрыты', 'info');
+    }
+  }
+  renderTabs();
+}
+
+function saveFile() {
+  const f = getFile(activeFileId);
+  if (!f) { showToast('Нет активного файла', 'error'); return; }
+  const blob = new Blob([f.code], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = f.name;
+  a.click();
+  URL.revokeObjectURL(url);
+  f.saved = true;
+  updateTabLabel(f);
+  updateStatus();
+  showToast(`Сохранено: ${f.name}`, 'success');
+}
+
+function openFile() {
+  document.getElementById('fileInput').click();
+}
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lang = guessMode(file.name);
+    createFile(file.name, lang, ev.target.result);
+    showToast(`Открыт: ${file.name}`, 'success');
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+let previewTimer = null;
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(runPreview, 400);
+}
+
+function runPreview() {
+  const f = getFile(activeFileId);
+  if (!f) return;
+  const pane = document.getElementById('previewPane');
+  if (!pane.classList.contains('visible')) return;
+
+  let html = '';
+  if (f.lang === 'htmlmixed') {
+    html = f.code;
+  } else if (f.lang === 'javascript') {
+    
+    html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+      body{font-family:monospace;font-size:14px;padding:16px;background:#1e1e2e;color:#d4d4e4;margin:0}
+      .log{margin:2px 0;padding:2px 6px;border-radius:4px;white-space:pre-wrap;word-break:break-all}
+      .log.info{background:#252537}
+      .log.error{background:#3d1f1f;color:#f07178}
+      .log.warn{background:#3d3010;color:#ffcb6b}
+      .log.out{background:#1a2a1a;color:#c3e88d}
+      .hdr{font-weight:bold;color:#82aaff;margin-bottom:8px;border-bottom:1px solid #3a3a50;padding-bottom:6px}
+    </style></head><body>
+    <div class="hdr">Console Output</div>
+    <div id="out"></div>
+    <canvas id="cnv" style="display:none"></canvas>
+    <script>
+      const out = document.getElementById('out');
+      function addLog(type, args) {
+        const div = document.createElement('div');
+        div.className = 'log ' + type;
+        div.textContent = args.map(a => {
+          try { return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a); }
+          catch(e) { return String(a); }
+        }).join(' ');
+        out.appendChild(div);
+      }
+      const origLog = console.log, origErr = console.error, origWarn = console.warn, origInfo = console.info;
+      console.log = (...a) => { addLog('out', a); origLog(...a); };
+      console.error = (...a) => { addLog('error', a); origErr(...a); };
+      console.warn = (...a) => { addLog('warn', a); origWarn(...a); };
+      console.info = (...a) => { addLog('info', a); origInfo(...a); };
+      window.onerror = (msg, src, line, col, err) => {
+        addLog('error', [msg + (line ? ' (line ' + line + ')' : '')]);
+      };
+      try {
+        ${f.code}
+      } catch(e) {
+        addLog('error', [e.stack || e.message]);
+      }
+    <\/script>
+    </body></html>`;
+  } else if (f.lang === 'css') {
+    html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${f.code}</style></head>
+    <body>
+    <h1>Заголовок 1</h1>
+    <h2>Заголовок 2</h2>
+    <p>Параграф текста для демонстрации CSS.</p>
+    <button>Кнопка</button>
+    <a href="#">Ссылка</a>
+    <ul><li>Пункт 1</li><li>Пункт 2</li><li>Пункт 3</li></ul>
+    <div style="margin-top:16px;padding:16px;border:1px solid #ccc">Блок с рамкой</div>
+    </body></html>`;
+  } else {
+    
+    html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+      body{font-family:monospace;font-size:14px;padding:20px;background:#1e1e2e;color:#d4d4e4;margin:0;white-space:pre-wrap;word-break:break-word}
+      .hdr{font-weight:bold;color:#82aaff;margin-bottom:12px}
+      .note{color:#6b6b85;font-style:italic}
+    </style></head><body>
+    <div class="hdr">${modeToLabel[f.lang] || f.lang} — предпросмотр недоступен</div>
+    <div class="note">Предпросмотр доступен для HTML, JavaScript и CSS.</div>
+    </body></html>`;
+  }
+
+  const frame = document.getElementById('previewFrame');
+  frame.srcdoc = html;
+}
+
+function togglePreview() {
+  const pane = document.getElementById('previewPane');
+  const splitter = document.getElementById('splitter');
+  const visible = pane.classList.toggle('visible');
+  splitter.style.display = visible ? 'block' : 'none';
+  if (visible) runPreview();
+  document.getElementById('dotLive').classList.toggle('off', !autoPreview);
+}
+
+let modalCallback = null;
+function showModal(title, defaultName, defaultLang, cb) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('fileNameInput').value = defaultName || '';
+  document.getElementById('langSelect').value = defaultLang || 'javascript';
+  modalCallback = cb;
+  document.getElementById('modalOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('fileNameInput').focus(), 50);
+}
+
+document.getElementById('modalOk').addEventListener('click', () => {
+  const name = document.getElementById('fileNameInput').value.trim() || 'untitled.txt';
+  const lang = document.getElementById('langSelect').value;
+  document.getElementById('modalOverlay').classList.remove('show');
+  if (modalCallback) modalCallback(name, lang);
+});
+
+document.getElementById('modalCancel').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('show');
+  modalCallback = null;
+});
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) {
+    e.currentTarget.classList.remove('show');
+    modalCallback = null;
+  }
+});
+
+document.getElementById('fileNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('modalOk').click();
+  if (e.key === 'Escape') document.getElementById('modalCancel').click();
+});
+
+document.getElementById('newFileBtn').addEventListener('click', () => {
+  showModal('Новый файл', 'untitled.js', 'javascript', (name, lang) => {
+    createFile(name, lang, '');
+    showToast(`Создан: ${name}`, 'success');
+  });
+});
+
+document.getElementById('tabAdd').addEventListener('click', () => {
+  document.getElementById('newFileBtn').click();
+});
+
+document.getElementById('openFileBtn').addEventListener('click', openFile);
+document.getElementById('saveFileBtn').addEventListener('click', saveFile);
+
+document.getElementById('runBtn').addEventListener('click', () => {
+  if (!document.getElementById('previewPane').classList.contains('visible')) togglePreview();
+  runPreview();
+});
+
+document.getElementById('togglePreviewBtn').addEventListener('click', togglePreview);
+
+document.getElementById('refreshPreview').addEventListener('click', runPreview);
+
+document.getElementById('openInNewTab').addEventListener('click', () => {
+  const f = getFile(activeFileId);
+  if (!f) return;
+  let html = '';
+  if (f.lang === 'htmlmixed') html = f.code;
+  else if (f.lang === 'javascript') {
+    html = `<<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script>\n${f.code}\n<\/script></body></html>`;
+  } else if (f.lang === 'css') {
+    html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${f.code}</style></head><body><h1>Заголовок</h1><p>Текст</p><button>Кнопка</button></body></html>`;
+  }
+  if (html) {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  const f = getFile(activeFileId);
+  if (!f) return;
+  if (confirm(`Очистить код в "${f.name}"?`)) {
+    editor.setValue('');
+    f.code = '';
+    f.saved = false;
+    updateTabLabel(f);
+    updateStatus();
+    showToast('Очищено', 'info');
+  }
+});
+
+const splitter = document.getElementById('splitter');
+let dragging = false;
+splitter.addEventListener('mousedown', e => {
+  dragging = true;
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const main = document.getElementById('main');
+  const rect = main.getBoundingClientRect();
+  const pane = document.getElementById('previewPane');
+  const editorW = e.clientX - rect.left;
+  const previewW = rect.width - editorW - 4;
+  if (previewW > 150 && editorW > 150) {
+    pane.style.width = previewW + 'px';
+    pane.style.flex = 'none';
+  }
+});
+document.addEventListener('mouseup', () => {
+  if (dragging) { dragging = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
+});
+
+window.addEventListener('resize', () => editor.refresh());
+
+createFile('index.html', 'htmlmixed', `
+`);
+
+createFile('script.js', 'javascript', ``);
+
+createFile('style.css', 'css', ``);
+
+createFile('factorial.py', 'python', ``);
+
+createFile('build.bat', 'text/x-bat', ``);
+
+switchFile(1);
+showToast('Quick Edit готов к работе!', 'success');
+</script>
+
+ 

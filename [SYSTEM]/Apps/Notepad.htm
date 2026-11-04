@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- CodeMirror -->
+<link rel="stylesheet" href="JSmin/codemirror.min.css">
+<link rel="stylesheet" href="JSmin/dialog.min.css">
+<link rel="stylesheet" href="JSmin/dracula.min.css">
+<link rel="stylesheet" href="JSmin/material-darker.min.css">
+<link rel="stylesheet" href="JSmin/simplescrollbars.min.css">
+<link rel="stylesheet" href="JSmin/all.min.css">
+<link rel="stylesheet" href="JSmin/simplescrollbars.min.css">
+
+<style>
+:root {
+  --bg:           #1e1e2e;
+  --bg-2:         #181825;
+  --bg-3:         #11111b;
+  --surface:      #1e1e2e;
+  --surface-h:    #313244;
+  --surface-h2:   #45475a;
+  --text:         #cdd6f4;
+  --text-dim:     #a6adc8;
+  --text-mute:    #7f849c;
+  --accent:       #89b4fa;
+  --accent-2:     #cba6f7;
+  --green:        #a6e3a1;
+  --red:          #f38ba8;
+  --orange:       #fab387;
+  --border:       #313244;
+  --tab-active:   #1e1e2e;
+  --tab-inactive: #181825;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  background: var(--bg-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+.topbar > * { -webkit-app-region: no-drag; }
+
+.topbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-right: 12px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.topbar-title i { color: var(--accent); }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tbtn {
+  background: #1e1e2e;
+  border: 1px solid var(--surface-h);
+  color: var(--text-dim);
+  padding: 7px 4px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.tbtn:hover {
+  background: var(--surface-h2);
+  color: var(--text);
+}
+.tbtn:active { transform: scale(.95); }
+.tbtn i { font-size: 12px; }
+
+.tbtn.icon-only { padding: 5px 9px; }
+
+.tsep {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.topbar-spacer { flex: 1; }
+
+.lang-select {
+  background: var(--surface-h);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+.lang-select:hover { border-color: var(--surface-h2); }
+.lang-select option { background: var(--bg-2); color: var(--text); }
+
+.font-controls {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--surface-h);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.font-controls button {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+.font-controls button:hover {
+  background: var(--surface-h2);
+  color: var(--text);
+}
+.font-controls button:active { transform: scale(.9); }
+.font-size-label {
+  min-width: 44px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.tabs-wrap {
+  display: flex;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 38px;
+}
+
+.tabs-scroll {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-h) transparent;
+}
+.tabs-scroll::-webkit-scrollbar { height: 4px; }
+.tabs-scroll::-webkit-scrollbar-thumb { background: var(--surface-h); border-radius: 2px; }
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px 7px 14px;
+  background: var(--tab-inactive);
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--text-mute);
+  transition: background .15s, color .15s;
+  user-select: none;
+  position: relative;
+  max-width: 240px;
+  min-width: 120px;
+}
+.tab:hover { background: var(--surface-h); color: var(--text-dim); }
+.tab.active {
+  background: var(--tab-active);
+  color: var(--text);
+}
+.tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+.tab .tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tab .tab-modified {
+  color: #C5FF00;
+  font-size: 11px;
+  margin-left: 2px;
+}
+.tab .tab-close {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-mute);
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.tab .tab-close:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+.tab-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  background: transparent;
+  border: none;
+  color: var(--text-mute);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.tab-add:hover { background: var(--surface-h); color: var(--accent); }
+
+.editor-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.editor-instance {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: none;
+}
+.editor-instance.active { display: block; }
+
+.CodeMirror {
+  height: 100% !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.cm-s-material-darker.CodeMirror {
+  background-color: var(--bg);
+  color: var(--text);
+}
+.cm-s-material-darker .CodeMirror-gutters {
+  background-color: var(--bg-2);
+  border-right: 1px solid var(--border);
+}
+.cm-s-material-darker .CodeMirror-linenumber { color: var(--text-mute); }
+.cm-s-material-darker .CodeMirror-cursor { border-left-color: var(--accent) !important; }
+.cm-s-material-darker .CodeMirror-selected { background: var(--surface-h) !important; }
+.cm-s-material-darker .CodeMirror-line::selection,
+.cm-s-material-darker .CodeMirror-line > span::selection,
+.cm-s-material-darker .CodeMirror-line > span > span::selection {
+  background: var(--surface-h);
+}
+.cm-s-material-darker .CodeMirror-activeline-background { background: var(--bg-2) !important; }
+.cm-s-material-darker .CodeMirror-matchingbracket { color: var(--accent) !important; border-bottom: 1px solid var(--accent); }
+.cm-s-material-darker span.cm-comment { color: #6c7086; font-style: italic; }
+.cm-s-material-darker span.cm-keyword { color: #cba6f7; }
+.cm-s-material-darker span.cm-string { color: #fab387; }
+.cm-s-material-darker span.cm-number { color: #fab387; }
+.cm-s-material-darker span.cm-variable { color: var(--text); }
+.cm-s-material-darker span.cm-variable-2 { color: #89b4fa; }
+.cm-s-material-darker span.cm-builtin { color: #89b4fa; }
+.cm-s-material-darker span.cm-function { color: #89b4fa; }
+.cm-s-material-darker span.cm-def { color: #a6e3a1; }
+.cm-s-material-darker span.cm-operator { color: #89dceb; }
+.cm-s-material-darker span.cm-property { color: #cdd6f4; }
+.cm-s-material-darker span.cm-tag { color: #f38ba8; }
+.cm-s-material-darker span.cm-attribute { color: #fab387; }
+.cm-s-material-darker span.cm-meta { color: #6c7086; }
+.cm-s-material-darker span.cm-atom { color: #fab387; }
+.cm-s-material-darker span.cm-bracket { color: var(--text); }
+.cm-s-material-darker span.cm-link { color: #89b4fa; text-decoration: underline; }
+.cm-s-material-darker span.cm-error { color: #f38ba8; }
+
+.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler { background: var(--bg-2) !important; }
+.CodeMirror-simple-scrollbar-horizontal, .CodeMirror-simple-scrollbar-vertical { background: var(--surface-h2); }
+
+.statusbar {
+  background: var(--bg-2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 2px 14px;
+  font-size: 13px;
+  color: var(--text-mute);
+  border-radius: 9px 9px 0 0;
+  gap: 9px;
+  flex-shrink: 0;
+  height: 40px;
+}
+.statusbar .sb-item { white-space: nowrap; }
+.statusbar .sb-item i { margin-right: 4px; font-size: 11px; }
+.statusbar .sb-spacer { flex: 1; }
+.statusbar .sb-clickable { cursor: pointer; }
+.statusbar .sb-clickable:hover { color: var(--text-dim); }
+
+.ctx-menu {
+  position: fixed;
+  background: var(--surface-h);
+  border: 1px solid var(--surface-h2);
+  border-radius: 8px;
+  padding: 5px;
+  min-width: 180px;
+  z-index: 9999;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.ctx-menu.show { display: block; }
+.ctx-item {
+  padding: 7px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ctx-item:hover { background: var(--surface-h2); color: var(--text); }
+.ctx-item i { width: 14px; text-align: center; font-size: 12px; }
+.ctx-item .shortcut { margin-left: auto; font-size: 11px; color: var(--text-mute); }
+.ctx-sep { height: 1px; background: var(--surface-h2); margin: 4px 0; }
+
+.drag-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(137,180,250,.08);
+  border: 3px dashed var(--accent);
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--accent);
+  pointer-events: none;
+}
+.drag-overlay.show { display: flex; }
+
+.toast-wrap {
+  position: fixed;
+  bottom: 40px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--surface-h);
+  border: 1px solid var(--surface-h2);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  animation: toastIn .25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 340px;
+}
+.toast i { font-size: 14px; }
+.toast.success i { color: var(--green); }
+.toast.error i { color: var(--red); }
+.toast.info i { color: var(--accent); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast.removing { animation: toastOut .2s ease forwards; }
+@keyframes toastOut {
+  to { opacity: 0; transform: translateX(40px); }
+}
+.vault-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.vault-modal-overlay.show { display: flex; }
+
+.vault-modal {
+  width: min(640px, 90vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d0d;
+  border: 1px solid #2e2e2e;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  animation: vaultIn 0.18s ease-out;
+}
+@keyframes vaultIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.vault-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #232323;
+}
+.vault-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: #f2f2f2;
+}
+.vault-close {
+  background: none;
+  border: none;
+  color: #8a8a8a;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.vault-close:hover { color: #fff; background: #1c1c1c; }
+
+.vault-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+}
+.vault-modal-body::-webkit-scrollbar { width: 8px; }
+.vault-modal-body::-webkit-scrollbar-thumb { background: #2e2e2e; border-radius: 4px; }
+
+.vault-folder { user-select: none; }
+.vault-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  color: #cfcfcf;
+  font-size: 14px;
+}
+.vault-folder-head:hover { background: #1a1a1a; }
+.vault-arrow {
+  width: 14px;
+  font-size: 10px;
+  color: #6a6a6a;
+  transition: transform 0.12s;
+}
+.vault-folder-children {
+  margin-left: 18px;
+  border-left: 1px solid #232323;
+  padding-left: 6px;
+}
+.vault-folder.collapsed .vault-folder-children { display: none; }
+.vault-empty-child { padding: 4px 8px; color: #555; font-size: 12px; font-style: italic; }
+
+.vault-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #b8b8b8;
+}
+.vault-file:hover { background: #1a1a1a; color: #fff; }
+.vault-file.selected {
+  background: #262626;
+  color: #fff;
+  outline: 1px solid #3a3a3a;
+}
+.vault-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-file-size { font-size: 11px; color: #6a6a6a; }
+.vault-empty { padding: 30px 10px; text-align: center; color: #666; font-size: 13px; line-height: 1.6; }
+
+.vault-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid #232323;
+}
+.vault-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #161616;
+  color: #cfcfcf;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.vault-btn:hover { background: #222; color: #fff; }
+.vault-btn-primary {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #161616;
+  color: #cfcfcf;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.vault-btn-primary:hover { background: #222; color: #fff;  }
+.vault-btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.find-bar {
+  position: absolute;
+  top: 0; right: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-right: none;
+  padding: 8px 12px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  z-index: 100;
+  border-radius: 0 0 0 8px;
+  box-shadow: -2px 2px 8px rgba(0,0,0,.2);
+}
+.find-bar.show { display: flex; }
+.find-bar input {
+  background: var(--surface-h);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+  outline: none;
+  width: 200px;
+}
+.find-bar input:focus { border-color: var(--accent); }
+.find-bar button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 28px; height: 28px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.find-bar button:hover { background: var(--surface-h2); color: var(--text); }
+.find-bar button:active { transform: scale(.92); }
+.find-bar .find-count { font-size: 11px; color: var(--text-mute); min-width: 50px; text-align: center; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-2); }
+::-webkit-scrollbar-thumb { background: var(--surface-h); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--surface-h2); }
+</style>
+
+<!-- ═══════ Шапка ═══════ -->
+<div class="topbar">
+
+  <div class="toolbar">
+    <button class="tbtn" onclick="newTab()" title="Новый (Ctrl+N)"><img src="assets/d_create.png" alt="ICON43" style="height: 19px; width: 19px; "> Создать</button>
+    <button class="tbtn" onclick="openFile()" title="Открыть (Ctrl+O)"><img src="assets/d_open.png" alt="ICON43" style="height: 19px; width: 19px; "> Открыть</button>
+	<button class="tbtn" id="openinshinkoros64" title="Открыть (Ctrl+O)"><img src="assets/d_open.png" alt="ICON43" style="height: 19px; width: 19px; "> Открыть из SDB</button>
+	 <button class="tbtn" id="savenashinkoros8989" title="Сохранить на виртуальный диск"><img src="assets/d_save.png" alt="ICON43" style="height: 19px; width: 19px; "> Сохранить на SDB</button>
+    <button class="tbtn" onclick="saveFile()" title="Сохранить (Ctrl+S)"><img src="assets/d_save.png" alt="ICON43" style="height: 19px; width: 19px; "> Сохранить</button>
+    <button class="tbtn" onclick="saveFileAs()" title="Сохранить как (Ctrl+Shift+S)"><img src="assets/d_saveas.png" alt="ICON43" style="height: 19px; width: 19px; "> Сохранить как</button>
+  </div>
+
+  <div class="tsep"></div>
+
+  <div class="toolbar">
+    <button class="tbtn" onclick="undo()" title="Отменить (Ctrl+Z)"><img src="assets/d_undo.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+    <button class="tbtn" onclick="redo()" title="Повторить (Ctrl+Y)"><img src="assets/d_redo.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+    <button class="tbtn" onclick="toggleFindBar()" title="Поиск (Ctrl+F)"><img src="assets/d_search.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+    <button class="tbtn" onclick="formatCode()" title="Форматировать"><img src="assets/d_wrap.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+  </div>
+
+  <div class="topbar-spacer"></div>
+
+  <div class="font-controls">
+    <button onclick="changeFontSize(-1)" title="Уменьшить шрифт">-</button>
+    <span class="font-size-label" id="fontSizeLabel">15px</span>
+    <button onclick="changeFontSize(1)" title="Увеличить шрифт">+</button>
+  </div>
+
+  <div class="tsep"></div>
+
+  <select class="lang-select" id="langSelect" onchange="changeLanguage()" title="Язык подсветки"></select>
+</div>
+
+<!-- ═══════ Вкладки ═══════ -->
+<div class="tabs-wrap">
+  <div class="tabs-scroll" id="tabsScroll"></div>
+  <button class="tab-add" onclick="newTab()" title="Новая вкладка"><img src="assets/ic_add_24dp.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+</div>
+
+<!-- ═══════ Область редактора ═══════ -->
+<div class="editor-area" id="editorArea">
+  <!-- find bar -->
+  <div class="find-bar" id="findBar">
+    <input type="text" id="findInput" placeholder="Поиск..." oninput="doFind()" />
+    <button onclick="findPrev()" title="Предыдущее"><img src="assets/d_dedent.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+	<button onclick="findNext()" title="Следующее"><img src="assets/d_indent.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+    <button onclick="closeFindBar()" title="Закрыть"><img src="assets/d_close.png" alt="ICON43" style="height: 19px; width: 19px; "></button>
+    <span class="find-count" id="findCount"></span>
+  </div>
+</div>
+<script>
+const FileVaultDB = (function () {
+  'use strict';
+
+  const DB_NAME = 'FileVaultDB';
+  const DB_VERSION = 1;
+  const STORE = 'files';
+
+  let db = null;          // текущее соединение
+  let opening = null;     // промис открытия (защита от гонки)
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+
+  // ==== Открытие базы (один раз на страницу) ====
+  function open() {
+    if (db) return Promise.resolve(db);
+    if (opening) return opening;
+
+    opening = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE)) {
+          const s = d.createObjectStore(STORE, { keyPath: 'id' });
+          s.createIndex('parentId', 'parentId', { unique: false });
+          s.createIndex('name', 'name', { unique: false });
+          s.createIndex('type', 'type', { unique: false });
+          s.createIndex('trashed', 'trashed', { unique: false });
+        }
+      };
+      req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      req.onerror = (e) => reject(e.target.error);
+    });
+
+    return opening;
+  }
+
+  // ==== Внутренняя транзакция ====
+  function tx(mode) {
+    return db.transaction(STORE, mode).objectStore(STORE);
+  }
+
+  function wrap(request) {
+    return new Promise((res, rej) => {
+      request.onsuccess = () => res(request.result);
+      request.onerror = () => rej(request.error);
+    });
+  }
+
+  // ==== Публичный API ====
+
+  // Добавить запись. item.blob — Blob/File (опционально)
+  async function add(item) {
+    await open();
+    const defaults = {
+      id: item.id || uid(),
+      name: item.name || 'Без имени',
+      type: item.type || 'file',        // 'file' | 'folder'
+      parentId: item.parentId ?? null,  // null = корень
+      size: item.blob ? item.blob.size : (item.size || 0),
+      blob: item.blob || null,
+      mime: item.blob ? (item.blob.type || item.mime || '') : (item.mime || ''),
+      created: item.created || Date.now(),
+      modified: item.modified || Date.now(),
+      trashed: item.trashed || false
+    };
+    await wrap(tx('readwrite').add(defaults));
+    return defaults;
+  }
+
+  // Добавить или перезаписать
+  async function put(item) {
+    await open();
+    await wrap(tx('readwrite').put(item));
+    return item;
+  }
+
+  // Получить по id
+  async function get(id) {
+    await open();
+    return wrap(tx('readonly').get(id));
+  }
+
+  // Удалить по id
+  async function remove(id) {
+    await open();
+    await wrap(tx('readwrite').delete(id));
+  }
+
+  // Все записи
+  async function all() {
+    await open();
+    const result = await wrap(tx('readonly').getAll());
+    return result || [];
+  }
+
+  // Выборка по индексу: 'parentId', 'name', 'type', 'trashed'
+  async function byIndex(indexName, value) {
+    await open();
+    const result = await wrap(tx('readonly').index(indexName).getAll(value));
+    return result || [];
+  }
+
+  return {
+    open,
+    add,
+    put,
+    get,
+    remove,
+    all,
+    byIndex,
+    uid,
+    DB_NAME, DB_VERSION, STORE
+  };
+})();
+</script>
+<!-- ═══════ Статус-бар ═══════ -->
+<div class="statusbar" id="statusbar">
+  <span class="sb-item" id="sbLineCol"> • Стр 1, Кол 1</span>
+  <span class="sb-item" id="sbChars"> • 0 символов</span>
+  <span class="sb-item" id="sbLines"> • 0 строк</span>
+  <span class="sb-spacer"></span>
+  <span class="sb-item" id="sbLang"> • Текст</span>
+  <span class="sb-item" id="sbEncoding"> • UTF-8</span>
+  <span class="sb-item sb-clickable" id="sbWordWrap" onclick="toggleWordWrap()"> • Перенос: ВЫКЛ</span>
+    <br>
+    <br>
+    <br>
+    <br>
+
+</div>
+
+<!-- ═══════ Контекстное меню ═══════ -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="cutText()"> Вырезать <span class="shortcut">Ctrl+X</span></div>
+  <div class="ctx-item" onclick="copyText()"> Копировать <span class="shortcut">Ctrl+C</span></div>
+  <div class="ctx-item" onclick="pasteText()"> Вставить <span class="shortcut">Ctrl+V</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="selectAll()"> Выделить всё <span class="shortcut">Ctrl+A</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="undo()"> Отменить <span class="shortcut">Ctrl+Z</span></div>
+  <div class="ctx-item" onclick="redo()"> Повторить <span class="shortcut">Ctrl+Y</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="saveFile()"> Сохранить <span class="shortcut">Ctrl+S</span></div>
+  <div class="ctx-item" onclick="toggleFindBar()"> Поиск <span class="shortcut">Ctrl+F</span></div>
+</div>
+
+<!-- drag overlay -->
+<div class="drag-overlay" id="dragOverlay"> &nbsp;Отпустите, чтобы открыть файл</div>
+
+<!-- toast wrap -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- CodeMirror scripts -->
+
+<script src="JSmin/codemirror.min.js"></script>
+
+<script src="JSmin/brace-fold.min.js"></script>
+<script src="JSmin/clike.min.js"></script>
+<script src="JSmin/closebrackets.min.js"></script>
+<script src="JSmin/closetag.min.js"></script>
+<script src="JSmin/comment.min.js"></script>
+<script src="JSmin/comment-fold.min.js"></script>
+<script src="JSmin/css.min.js"></script>
+<script src="JSmin/css-hint.min.js"></script>
+<script src="JSmin/dialog.min.js"></script>
+<script src="JSmin/foldcode.min.js"></script>
+<script src="JSmin/foldgutter.min.js"></script>
+<script src="JSmin/html-hint.min.js"></script>
+<script src="JSmin/htmlmixed.min.js"></script>
+<script src="JSmin/indent-fold.min.js"></script>
+<script src="JSmin/javascript.min.js"></script>
+<script src="JSmin/javascript-hint.min.js"></script>
+<script src="JSmin/matchbrackets.min.js"></script>
+<script src="JSmin/matchtags.min.js"></script>
+<script src="JSmin/pascal.min.js"></script>
+<script src="JSmin/python.min.js"></script>
+<script src="JSmin/search.min.js"></script>
+<script src="JSmin/searchcursor.min.js"></script>
+<script src="JSmin/shell.min.js"></script>
+<script src="JSmin/show-hint.min.js"></script>
+<script src="JSmin/sublime.min.js"></script>
+<script src="JSmin/textile.min.js"></script>
+<script src="JSmin/xml.min.js"></script>
+<script src="JSmin/xml-fold.min.js"></script>
+
+<script src="JSmin/html-hint.min.js"></script>
+<script src="JSmin/javascript-hint.min.js"></script>
+<script src="JSmin/show-hint.min.js"></script>
+<script src="JSmin/matchtags.min.js"></script>
+<script src="JSmin/textile.min.js"></script>
+<script src="JSmin/pascal.min.js"></script>
+<script src="JSmin/sublime.min.js"></script>
+<script src="JSmin/css-hint.min.js"></script>
+
+<link rel="stylesheet" href="JSmin/foldgutter.min.css">
+
+<script>
+
+const LANGUAGES = [
+  { name: 'Текст',           mode: 'null',             ext: ['txt'] },
+  { name: 'HTML',            mode: 'htmlmixed',         ext: ['html','htm','xhtml'] },
+  { name: 'CSS',             mode: 'css',               ext: ['css'] },
+  { name: 'JavaScript',      mode: 'javascript',        ext: ['js','mjs','jsx'] },
+  { name: 'JSON',            mode: { name: 'javascript', json: true }, ext: ['json'] },
+  { name: 'XML',             mode: 'xml',               ext: ['xml','svg','rss'] },
+  { name: 'Python',          mode: 'python',            ext: ['py','pyw'] },
+  { name: 'C',               mode: 'text/x-csrc',       ext: ['c','h'] },
+  { name: 'C++',             mode: 'text/x-c++src',     ext: ['cpp','cc','cxx','hpp'] },
+  { name: 'C#',              mode: 'text/x-csharp',     ext: ['cs'] },
+  { name: 'Java',            mode: 'text/x-java',       ext: ['java'] },
+  { name: 'PHP',             mode: 'php',               ext: ['php','phtml'] },
+  { name: 'SQL',             mode: 'sql',               ext: ['sql'] },
+  { name: 'Markdown',        mode: 'markdown',          ext: ['md','markdown'] },
+  { name: 'YAML',            mode: 'yaml',              ext: ['yml','yaml'] },
+  { name: 'Shell',           mode: 'shell',             ext: ['sh','bash','zsh'] },
+  { name: 'Ruby',            mode: 'ruby',              ext: ['rb'] },
+  { name: 'Go',              mode: 'go',                ext: ['go'] },
+  { name: 'Rust',            mode: 'rust',              ext: ['rs'] },
+  { name: 'Lua',             mode: 'lua',               ext: ['lua'] },
+  { name: 'PowerShell',      mode: 'powershell',        ext: ['ps1','psm1'] },
+  { name: 'VB.NET',          mode: 'vb',                ext: ['vb'] },
+  { name: 'Perl',            mode: 'perl',              ext: ['pl','pm'] },
+  { name: 'Swift',           mode: 'swift',             ext: ['swift'] },
+  { name: 'Dart',            mode: 'dart',              ext: ['dart'] },
+  { name: 'Dockerfile',      mode: 'dockerfile',        ext: ['dockerfile'] },
+  { name: 'TOML',            mode: 'toml',              ext: ['toml'] },
+  { name: 'Vue',             mode: 'vue',               ext: ['vue'] },
+  { name: 'TypeScript',      mode: { name: 'javascript', typescript: true }, ext: ['ts','tsx'] },
+];
+
+let tabIdCounter = 0;
+let tabs = [];
+let activeTabId = null;
+let fontSize = 15;
+let wordWrap = false;
+let findCursor = null;
+let findMatches = [];
+let findIndex = -1;
+
+function fillLangSelect() {
+  const sel = document.getElementById('langSelect');
+  sel.innerHTML = '';
+  LANGUAGES.forEach((lang, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = lang.name;
+    sel.appendChild(opt);
+  });
+}
+
+function detectLang(filename) {
+  if (!filename) return 0;
+  const ext = filename.split('.').pop().toLowerCase();
+  for (let i = 0; i < LANGUAGES.length; i++) {
+    if (LANGUAGES[i].ext.includes(ext)) return i;
+  }
+  return 0;
+}
+
+function newTab(content = '', filename = null, langIndex = null) {
+  const id = ++tabIdCounter;
+  if (langIndex === null) langIndex = filename ? detectLang(filename) : 0;
+  const displayName = filename ? filename.split(/[\\/]/).pop() : `Без имени ${id}`;
+
+  const editorDiv = document.createElement('div');
+  editorDiv.className = 'editor-instance';
+  editorDiv.id = `editor-${id}`;
+  document.getElementById('editorArea').appendChild(editorDiv);
+
+  const cm = CodeMirror(editorDiv, {
+    value: content,
+    mode: LANGUAGES[langIndex].mode,
+    theme: 'material-darker',
+    lineNumbers: true,
+    lineWrapping: wordWrap,
+    autoCloseBrackets: true,
+    autoCloseTags: true,
+    matchBrackets: true,
+    styleActiveLine: true,
+    indentUnit: 2,
+    tabSize: 2,
+    indentWithTabs: false,
+    smartIndent: true,
+    extraKeys: {
+      'Ctrl-S':     () => saveFile(),
+      'Ctrl-N':     () => newTab(),
+      'Ctrl-O':     () => openFile(),
+      'Ctrl-F':     () => toggleFindBar(),
+      'Ctrl-Z':     cm => cm.undo(),
+      'Ctrl-Y':     cm => cm.redo(),
+      'Ctrl-Shift-S': () => saveFileAs(),
+      'Ctrl-/':     cm => cm.toggleComment(),
+      'Ctrl-D':     cm => {
+        const cur = cm.getCursor();
+        const line = cm.getLine(cur.line);
+        cm.replaceRange(line + '\n', { line: cur.line, ch: 0 }, { line: cur.line, ch: 0 });
+        cm.setCursor({ line: cur.line + 1, ch: cur.ch });
+      },
+      'Tab':        cm => {
+        if (cm.somethingSelected()) cm.indentSelection('add');
+        else cm.replaceSelection('  ', 'end');
+      },
+    },
+  });
+  cm.setSize('100%', '100%');
+  cm.setOption('fontSize', fontSize + 'px');
+
+  const wrapper = cm.getWrapperElement();
+  wrapper.style.fontSize = fontSize + 'px';
+
+  const tabData = {
+    id,
+    name: displayName,
+    filePath: filename,
+    content: content,
+    modified: false,
+    langIndex: langIndex,
+    cm: cm,
+    editorDiv: editorDiv,
+  };
+
+  tabs.push(tabData);
+
+  cm.on('change', (instance, changeObj) => {
+    if (changeObj.origin === 'setValue') return;
+    tabData.modified = true;
+    tabData.content = cm.getValue();
+    updateTabUI(id);
+    updateStatusbar();
+  });
+
+  cm.on('cursorActivity', updateStatusbar);
+
+  renderTabs();
+  switchTab(id);
+  cm.focus();
+  return tabData;
+}
+
+function renderTabs() {
+  const container = document.getElementById('tabsScroll');
+  container.innerHTML = '';
+
+  tabs.forEach(tab => {
+    const el = document.createElement('div');
+    el.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
+    el.dataset.tabId = tab.id;
+    el.onclick = (e) => {
+      if (e.target.classList.contains('tab-close')) return;
+      switchTab(tab.id);
+    };
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      showTabContextMenu(e, tab.id);
+    };
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'tab-name';
+    nameSpan.textContent = tab.name;
+    el.appendChild(nameSpan);
+
+    if (tab.modified) {
+      const dot = document.createElement('span');
+      dot.className = 'tab-modified';
+      dot.textContent = '●'; 
+      el.appendChild(dot);
+    }
+
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'tab-close';
+    closeBtn.innerHTML = '<img src="assets/d_close.png" alt="ICON43" style="height: 19px; width: 19px; ">';
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      closeTab(tab.id);
+    };
+    el.appendChild(closeBtn);
+
+    container.appendChild(el);
+  });
+}
+
+function switchTab(id) {
+  if (!tabs.find(t => t.id === id)) return;
+
+  document.querySelectorAll('.editor-instance').forEach(d => d.classList.remove('active'));
+
+  activeTabId = id;
+  const tab = tabs.find(t => t.id === id);
+  if (!tab) return;
+
+  tab.editorDiv.classList.add('active');
+  document.getElementById('langSelect').value = tab.langIndex;
+
+  tab.cm.getWrapperElement().style.fontSize = fontSize + 'px';
+  tab.cm.refresh();
+  tab.cm.focus();
+
+  renderTabs();
+  updateStatusbar();
+}
+
+function closeTab(id) {
+  const tab = tabs.find(t => t.id === id);
+  if (!tab) return;
+
+  if (tab.modified) {
+    if (!confirm(`Закрыть «${tab.name}»? Несохранённые изменения будут потеряны.`)) return;
+  }
+
+  tab.editorDiv.remove();
+  tabs = tabs.filter(t => t.id !== id);
+
+  if (activeTabId === id) {
+    if (tabs.length > 0) {
+      switchTab(tabs[tabs.length - 1].id);
+    } else {
+      activeTabId = null;
+      newTab();
+    }
+  } else {
+    renderTabs();
+  }
+}
+
+function updateTabUI(id) {
+  renderTabs();
+}
+
+function getActiveTab() {
+  return tabs.find(t => t.id === activeTabId);
+}
+
+function openFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.onchange = (e) => {
+    Array.from(e.target.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const content = ev.target.result;
+        const langIdx = detectLang(file.name);
+        newTab(content, file.name, langIdx);
+        
+        const tab = getActiveTab();
+        if (tab) {
+          tab.modified = false;
+          tab.content = content;
+          tab.filePath = file.name;
+          renderTabs();
+        }
+        toast('success', `Файл «${file.name}» открыт`);
+      };
+      reader.onerror = () => toast('error', `Ошибка чтения файла «${file.name}»`);
+      reader.readAsText(file);
+    });
+  };
+  input.click();
+}
+
+function saveFile() {
+  const tab = getActiveTab();
+  if (!tab) return;
+
+  if (tab.filePath) {
+
+    downloadContent(tab);
+  } else {
+    saveFileAs();
+  }
+}
+
+function saveFileAs() {
+  const tab = getActiveTab();
+  if (!tab) return;
+
+  const defaultName = tab.filePath ? tab.filePath.split(/[\\/]/).pop() : tab.name;
+
+  const name = prompt('Имя файла:', defaultName);
+  if (!name) return;
+
+  tab.name = name;
+  tab.filePath = name;
+  downloadContent(tab);
+}
+
+function downloadContent(tab) {
+  const content = tab.cm.getValue();
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = tab.filePath ? tab.filePath.split(/[\\/]/).pop() : tab.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  tab.modified = false;
+  tab.content = content;
+  renderTabs();
+  toast('success', `Сохранено: ${a.download}`);
+}
+
+function changeLanguage() {
+  const tab = getActiveTab();
+  if (!tab) return;
+  const sel = document.getElementById('langSelect');
+  tab.langIndex = parseInt(sel.value);
+  tab.cm.setOption('mode', LANGUAGES[tab.langIndex].mode);
+  updateStatusbar();
+  toast('info', `Язык: ${LANGUAGES[tab.langIndex].name}`);
+}
+
+function changeFontSize(delta) {
+  fontSize = Math.max(8, Math.min(48, fontSize + delta));
+  document.getElementById('fontSizeLabel').textContent = fontSize + 'px';
+  tabs.forEach(tab => {
+    tab.cm.getWrapperElement().style.fontSize = fontSize + 'px';
+    tab.cm.refresh();
+  });
+  const tab = getActiveTab();
+  if (tab) tab.cm.focus();
+}
+
+function toggleWordWrap() {
+  wordWrap = !wordWrap;
+  tabs.forEach(tab => tab.cm.setOption('lineWrapping', wordWrap));
+  const el = document.getElementById('sbWordWrap');
+  el.innerHTML = ` • Перенос: ${wordWrap ? 'ВКЛ' : 'ВЫКЛ'}`;
+}
+
+function undo() {
+  const tab = getActiveTab();
+  if (tab) tab.cm.undo();
+}
+function redo() {
+  const tab = getActiveTab();
+  if (tab) tab.cm.redo();
+}
+
+function selectAll() {
+  const tab = getActiveTab();
+  if (tab) tab.cm.execCommand('selectAll');
+  hideCtxMenu();
+}
+
+function cutText() {
+  const tab = getActiveTab();
+  if (!tab) return;
+  const sel = tab.cm.getSelection();
+  navigator.clipboard.writeText(sel);
+  tab.cm.replaceSelection('');
+  hideCtxMenu();
+}
+function copyText() {
+  const tab = getActiveTab();
+  if (!tab) return;
+  navigator.clipboard.writeText(tab.cm.getSelection());
+  hideCtxMenu();
+}
+function pasteText() {
+  navigator.clipboard.readText().then(text => {
+    const tab = getActiveTab();
+    if (tab) tab.cm.replaceSelection(text);
+  }).catch(() => toast('error', 'Не удалось вставить'));
+  hideCtxMenu();
+}
+
+function showContextMenu(e) {
+  e.preventDefault();
+  const menu = document.getElementById('ctxMenu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('show');
+}
+function showTabContextMenu(e, tabId) {
+  e.preventDefault();
+  
+  const menu = document.getElementById('ctxMenu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('show');
+}
+function hideCtxMenu() {
+  document.getElementById('ctxMenu').classList.remove('show');
+}
+
+function toggleFindBar() {
+  const bar = document.getElementById('findBar');
+  bar.classList.toggle('show');
+  if (bar.classList.contains('show')) {
+    document.getElementById('findInput').focus();
+    document.getElementById('findInput').select();
+  }
+}
+function closeFindBar() {
+  document.getElementById('findBar').classList.remove('show');
+  const tab = getActiveTab();
+  if (tab) tab.cm.focus();
+}
+
+function doFind() {
+  const query = document.getElementById('findInput').value;
+  const tab = getActiveTab();
+  if (!tab || !query) {
+    findMatches = [];
+    findIndex = -1;
+    document.getElementById('findCount').textContent = '';
+    return;
+  }
+
+  const cm = tab.cm;
+  findMatches = [];
+  const cursor = cm.getSearchCursor(query, { line: 0, ch: 0 }, false);
+  while (cursor.findNext()) {
+    findMatches.push({ from: cursor.from(), to: cursor.to() });
+  }
+
+  if (findMatches.length > 0) {
+    findIndex = 0;
+    cm.setSelection(findMatches[0].from, findMatches[0].to);
+    cm.scrollIntoView(findMatches[0].from, 100);
+    document.getElementById('findCount').textContent = `${findIndex + 1}/${findMatches.length}`;
+  } else {
+    findIndex = -1;
+    document.getElementById('findCount').textContent = '0/0';
+  }
+}
+
+function findNext() {
+  if (findMatches.length === 0) return doFind();
+  findIndex = (findIndex + 1) % findMatches.length;
+  const tab = getActiveTab();
+  if (tab) {
+    tab.cm.setSelection(findMatches[findIndex].from, findMatches[findIndex].to);
+    tab.cm.scrollIntoView(findMatches[findIndex].from, 100);
+  }
+  document.getElementById('findCount').textContent = `${findIndex + 1}/${findMatches.length}`;
+}
+
+function findPrev() {
+  if (findMatches.length === 0) return doFind();
+  findIndex = (findIndex - 1 + findMatches.length) % findMatches.length;
+  const tab = getActiveTab();
+  if (tab) {
+    tab.cm.setSelection(findMatches[findIndex].from, findMatches[findIndex].to);
+    tab.cm.scrollIntoView(findMatches[findIndex].from, 100);
+  }
+  document.getElementById('findCount').textContent = `${findIndex + 1}/${findMatches.length}`;
+}
+
+function formatCode() {
+  const tab = getActiveTab();
+  if (!tab) return;
+  const cm = tab.cm;
+  const lang = LANGUAGES[tab.langIndex].name;
+
+  if (lang === 'JSON') {
+    try {
+      const text = cm.getValue();
+      const formatted = JSON.stringify(JSON.parse(text), null, 2);
+      cm.setValue(formatted);
+      toast('success', 'JSON отформатирован');
+    } catch (e) {
+      toast('error', 'Невалидный JSON');
+    }
+  } else if (lang === 'HTML' || lang === 'XML') {
+    
+    const text = cm.getValue();
+    const formatted = formatHTML(text);
+    cm.setValue(formatted);
+    toast('success', 'Код отформатирован');
+  } else {
+    
+    cm.execCommand('indentAuto');
+    toast('info', 'Авто-отступ применён');
+  }
+}
+
+function formatHTML(html) {
+  let formatted = '';
+  let indent = 0;
+  const lines = html.replace(/></g, '>\n<').split('\n');
+  lines.forEach(line => {
+    line = line.trim();
+    if (!line) return;
+    if (line.match(/^<\/\w/) && indent > 0) indent--;
+    formatted += '  '.repeat(indent) + line + '\n';
+    if (line.match(/^<\w[^>]*[^\/]>$/) && !line.match(/^<(meta|link|br|hr|img|input)\b/)) indent++;
+  });
+  return formatted.trimEnd();
+}
+
+function updateStatusbar() {
+  const tab = getActiveTab();
+  if (!tab) {
+    document.getElementById('sbLineCol').innerHTML = ' • Стр 1, Кол 1';
+    document.getElementById('sbChars').innerHTML = ' • 0 символов';
+    document.getElementById('sbLines').innerHTML = ' • 0 строк';
+    document.getElementById('sbLang').innerHTML = ' • —';
+    return;
+  }
+  const cm = tab.cm;
+  const cur = cm.getCursor();
+  document.getElementById('sbLineCol').innerHTML = ` • Стр ${cur.line + 1}, Кол ${cur.ch + 1}`;
+  const text = cm.getValue();
+  document.getElementById('sbChars').innerHTML = ` • ${text.length} символов`;
+  document.getElementById('sbLines').innerHTML = ` • ${cm.lineCount()} строк`;
+  document.getElementById('sbLang').innerHTML = ` • ${LANGUAGES[tab.langIndex].name}`;
+}
+
+function toast(type, msg) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+  el.innerHTML = `<i class="fa-solid ${icons[type]}"></i> ${msg}`;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('removing');
+    setTimeout(() => el.remove(), 200);
+  }, 2800);
+}
+
+let dragCounter = 0;
+document.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  dragCounter++;
+  document.getElementById('dragOverlay').classList.add('show');
+});
+document.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    document.getElementById('dragOverlay').classList.remove('show');
+  }
+});
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  document.getElementById('dragOverlay').classList.remove('show');
+
+  const files = e.dataTransfer.files;
+  Array.from(files).forEach(file => {
+    if (file.type.startsWith('text') || file.size < 5 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const content = ev.target.result;
+        const langIdx = detectLang(file.name);
+        newTab(content, file.name, langIdx);
+        const tab = getActiveTab();
+        if (tab) {
+          tab.modified = false;
+          tab.content = content;
+          tab.filePath = file.name;
+          renderTabs();
+        }
+        toast('success', `Файл «${file.name}» открыт`);
+      };
+      reader.readAsText(file);
+    } else {
+      toast('info', `«${file.name}» — пропущен (бинарный)`);
+    }
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+    e.preventDefault();
+    saveFileAs();
+  }
+  if (e.ctrlKey && !e.shiftKey) {
+    if (e.key === 's' || e.key === 'S' || e.key === 'Ы') {
+      e.preventDefault();
+      saveFile();
+    }
+    if (e.key === 'o' || e.key === 'O' || e.key === 'Щ') {
+      e.preventDefault();
+      openFile();
+    }
+    if (e.key === 'n' || e.key === 'N' || e.key === 'Т') {
+      e.preventDefault();
+      newTab();
+    }
+    if (e.key === 'f' || e.key === 'F' || e.key === 'А') {
+      e.preventDefault();
+      toggleFindBar();
+    }
+  }
+  if (e.key === 'Escape') {
+    closeFindBar();
+    hideCtxMenu();
+  }
+});
+
+document.getElementById('findInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (e.shiftKey) findPrev();
+    else findNext();
+  }
+});
+
+document.querySelector('.editor-area').addEventListener('contextmenu', showContextMenu);
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ctx-menu') && !e.target.closest('.editor-area') && !e.target.closest('.tab')) {
+    hideCtxMenu();
+  }
+});
+
+document.addEventListener('mousedown', (e) => {
+  if (!e.target.closest('#ctxMenu')) hideCtxMenu();
+});
+
+fillLangSelect();
+
+newTab('', null, 0);
+document.getElementById('fontSizeLabel').textContent = fontSize + 'px';
+
+const firstTab = getActiveTab();
+if (firstTab) {
+  firstTab.cm.setValue(
+``);
+  firstTab.modified = false;
+  firstTab.content = firstTab.cm.getValue();
+  renderTabs();
+  firstTab.cm.setCursor({ line: 0, ch: 0 });
+}
+</script>
+
+    <script>
+(function () {
+  'use strict';
+
+  const BTN_ID = 'openinshinkoros64';
+
+  // ── Создание разметки окна ──
+  function buildModal() {
+    if (document.getElementById('vaultOpenModal')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'vaultOpenModal';
+    overlay.className = 'vault-modal-overlay';
+
+    overlay.innerHTML = `
+      <div class="vault-modal" role="dialog" aria-modal="true">
+        <div class="vault-modal-head">
+          <span class="vault-modal-title">Открыть файл</span>
+          <button class="vault-close" type="button" aria-label="Закрыть">✕</button>
+        </div>
+        <div class="vault-modal-body">
+          <div class="vault-tree" id="vaultTree"></div>
+        </div>
+        <div class="vault-modal-foot">
+          <button class="vault-btn" type="button" data-act="cancel">Отмена</button>
+          <button class="vault-btn vault-btn-primary" type="button" data-act="open" disabled>Открыть</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('.vault-close').addEventListener('click', closeModal);
+    overlay.querySelector('[data-act="cancel"]').addEventListener('click', closeModal);
+    overlay.addEventListener('mousedown', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+    overlay.querySelector('[data-act="open"]').addEventListener('click', () => {
+      const file = overlay._selected;
+      if (file) openFileFromVault(file);
+    });
+  }
+
+  function openModal() {
+    buildModal();
+    const overlay = document.getElementById('vaultOpenModal');
+    overlay._selected = null;
+    overlay.classList.add('show');
+    renderTree();
+  }
+
+  function closeModal() {
+    const overlay = document.getElementById('vaultOpenModal');
+    if (overlay) overlay.classList.remove('show');
+  }
+
+  // ── Построение дерева из БД ──
+  async function renderTree() {
+    const container = document.getElementById('vaultTree');
+    container.innerHTML = '<div class="vault-empty">Загрузка…</div>';
+
+    let items;
+    try {
+      items = await FileVaultDB.all();
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = '<div class="vault-empty">Ошибка загрузки хранилища</div>';
+      return;
+    }
+
+    items = items.filter(i => !i.trashed);
+    const rootFiles = items.filter(i => i.type === 'file' && (i.parentId === null || i.parentId === undefined));
+    const folders = items.filter(i => i.type === 'folder');
+
+    container.innerHTML = '';
+
+    if (folders.length === 0 && rootFiles.length === 0) {
+      container.innerHTML = '<div class="vault-empty">Хранилище пусто.<br>Сохраните первый файл — он появится здесь.</div>';
+      return;
+    }
+
+    // Сначала папки, потом файлы
+    folders
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+      .forEach(f => container.appendChild(buildFolderNode(f, items)));
+
+    rootFiles
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+      .forEach(f => container.appendChild(buildFileNode(f)));
+  }
+
+  function buildFolderNode(folder, allItems) {
+    const node = document.createElement('div');
+    node.className = 'vault-folder';
+
+    const head = document.createElement('div');
+    head.className = 'vault-folder-head';
+    head.innerHTML = `
+      <span class="vault-arrow">▸</span>
+      <span class="vault-folder-icon">📁</span>
+      <span class="vault-folder-name"></span>`;
+    head.querySelector('.vault-folder-name').textContent = folder.name;
+    node.appendChild(head);
+
+    const children = document.createElement('div');
+    children.className = 'vault-folder-children';
+    node.appendChild(children);
+
+    const kids = allItems.filter(i => i.parentId === folder.id);
+    const kidFolders = kids.filter(i => i.type === 'folder')
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    const kidFiles = kids.filter(i => i.type === 'file')
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+    kidFolders.forEach(f => children.appendChild(buildFolderNode(f, allItems)));
+    kidFiles.forEach(f => children.appendChild(buildFileNode(f)));
+
+    if (kidFolders.length === 0 && kidFiles.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'vault-empty-child';
+      empty.textContent = 'Пусто';
+      children.appendChild(empty);
+    }
+
+    head.addEventListener('click', () => {
+      node.classList.toggle('collapsed');
+      head.querySelector('.vault-arrow').textContent =
+        node.classList.contains('collapsed') ? '▸' : '▾';
+    });
+
+    return node;
+  }
+
+  function buildFileNode(file) {
+    const el = document.createElement('div');
+    el.className = 'vault-file';
+    el.dataset.id = file.id;
+    el.innerHTML = `
+      <span class="vault-file-icon">📄</span>
+      <span class="vault-file-name"></span>
+      <span class="vault-file-size"></span>`;
+    el.querySelector('.vault-file-name').textContent = file.name;
+    el.querySelector('.vault-file-size').textContent = formatSize(file.size);
+
+    el.addEventListener('click', () => selectFile(el, file));
+    el.addEventListener('dblclick', () => openFileFromVault(file));
+
+    return el;
+  }
+
+  function selectFile(el, file) {
+    document.querySelectorAll('.vault-file.selected')
+      .forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('vaultOpenModal')._selected = file;
+    document.querySelector('#vaultOpenModal [data-act="open"]').disabled = false;
+  }
+
+  function formatSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' Б';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+    return (bytes / 1024 / 1024).toFixed(1) + ' МБ';
+  }
+
+  // ── Открытие выбранного файла в редакторе ──
+  async function openFileFromVault(file) {
+    try {
+      const blob = file.blob;
+      if (!blob) {
+        toast('error', `Файл «${file.name}» не содержит данных`);
+        return;
+      }
+
+      const content = await blob.text();
+      const langIdx = (typeof detectLang === 'function') ? detectLang(file.name) : 0;
+      const tab = newTab(content, file.name, langIdx);
+
+      tab.modified = false;
+      tab.content = content;
+      tab.filePath = file.name;
+      tab.vaultId = file.id; // повторное сохранение перезапишет эту же запись
+      renderTabs();
+      updateStatusbar();
+      toast('success', `Открыт «${file.name}» из хранилища`);
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      toast('error', 'Не удалось открыть файл: ' + (err && err.message));
+    }
+  }
+
+  function init() {
+    const btn = document.getElementById(BTN_ID);
+    if (!btn) {
+      console.warn(`Кнопка #${BTN_ID} не найдена`);
+      return;
+    }
+    btn.addEventListener('click', openModal);
+
+    document.addEventListener('keydown', (e) => {
+      const overlay = document.getElementById('vaultOpenModal');
+      if (overlay && overlay.classList.contains('show') && e.key === 'Escape') closeModal();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+(function () {
+  'use strict';
+
+  const BTN_ID = 'savenashinkoros8989';
+
+  const MIME = {
+    txt: 'text/plain',
+    html: 'text/html', htm: 'text/html', xhtml: 'application/xhtml+xml',
+    css: 'text/css',
+    js: 'text/javascript', mjs: 'text/javascript', jsx: 'text/javascript',
+    ts: 'text/plain', tsx: 'text/plain',
+    json: 'application/json',
+    xml: 'application/xml', svg: 'image/svg+xml', rss: 'application/rss+xml',
+    py: 'text/x-python', pyw: 'text/x-python',
+    c: 'text/plain', h: 'text/plain',
+    cpp: 'text/plain', cc: 'text/plain', cxx: 'text/plain', hpp: 'text/plain',
+    cs: 'text/plain', java: 'text/plain',
+    php: 'application/x-httpd-php', phtml: 'application/x-httpd-php',
+    sql: 'application/sql',
+    md: 'text/markdown', markdown: 'text/markdown',
+    yml: 'text/yaml', yaml: 'text/yaml', toml: 'text/plain',
+    sh: 'text/x-sh', bash: 'text/x-sh', zsh: 'text/x-sh',
+    rb: 'text/plain', go: 'text/plain', rs: 'text/plain', lua: 'text/plain',
+    ps1: 'text/plain', psm1: 'text/plain', vb: 'text/plain',
+    pl: 'text/plain', pm: 'text/plain',
+    swift: 'text/plain', dart: 'text/plain', vue: 'text/plain',
+    dockerfile: 'text/plain'
+  };
+
+  // Проверка: есть ли у имени расширение
+  function hasExtension(name) {
+    const base = name.split(/[\\/]/).pop();
+    const dot = base.lastIndexOf('.');
+    // "файл." и ".htaccess" расширением не считаем
+    return dot > 0 && dot < base.length - 1;
+  }
+
+  function getMime(name) {
+    if (!hasExtension(name)) return 'text/plain';
+    const ext = name.split('.').pop().toLowerCase();
+    return MIME[ext] || 'text/plain';
+  }
+
+  // Если расширения нет — добавляем .txt
+  function ensureExtension(name) {
+    const base = (name || 'Без имени').split(/[\\/]/).pop();
+    return hasExtension(base) ? base : base + '.txt';
+  }
+
+  function getFileName(tab) {
+    if (tab.filePath) return ensureExtension(tab.filePath);
+    return ensureExtension(tab.name.replace(/\s+/g, '_'));
+  }
+
+  async function saveToVault() {
+    const tab = getActiveTab();
+    if (!tab) return;
+
+    const content = tab.cm.getValue();
+    const name = getFileName(tab);
+
+    if (!tab.vaultId) tab.vaultId = FileVaultDB.uid();
+
+    const blob = new Blob([content], { type: getMime(name) + ';charset=utf-8' });
+
+    try {
+      const existing = await FileVaultDB.get(tab.vaultId);
+
+      const item = {
+        id: tab.vaultId,
+        name: name,
+        type: 'file',
+        parentId: null,
+        blob: blob,
+        mime: blob.type,
+        size: blob.size,
+        created: existing ? existing.created : Date.now(),
+        modified: Date.now(),
+        trashed: false
+      };
+
+      await FileVaultDB.put(item);
+
+      // синхронизируем состояние вкладки с реальным именем в хранилище
+      tab.filePath = name;
+      tab.name = name;
+      tab.modified = false;
+      tab.content = content;
+      renderTabs();
+      toast('success', `Сохранено в хранилище: ${name}`);
+    } catch (err) {
+      console.error('Vault save error:', err);
+      toast('error', 'Ошибка сохранения в хранилище: ' + (err && err.message));
+    }
+  }
+
+  function init() {
+    const btn = document.getElementById(BTN_ID);
+    if (!btn) {
+      console.warn(`Кнопка #${BTN_ID} не найдена`);
+      return;
+    }
+    btn.addEventListener('click', saveToVault);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+    </script>

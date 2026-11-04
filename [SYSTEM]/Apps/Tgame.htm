@@ -1,0 +1,885 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TANK BRAWL</title>
+<style>
+* { user-select: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; background: #0a1a0a;
+  display: flex; justify-content: center; align-items: center;
+  font-family: 'Courier New', monospace; touch-action: none;
+  overflow: hidden; width: 100%; height: 100%; position: fixed;
+}
+.menu {
+  background: #1e2a1c; border: 3px solid #e9b45e; border-radius: 32px;
+  padding: 18px; max-width: 480px; width: 92%; text-align: center;
+  max-height: 95vh; overflow-y: auto;
+}
+.menu h1 { font-size: 1.5rem; color: #f7e9c3; margin: 0 0 10px; }
+.menu h2 { font-size: 0.9rem; color: #cfc68f; margin: 12px 0 5px; }
+.mode-btn {
+  background: #2f3a28; border: none; padding: 11px; border-radius: 40px;
+  font-weight: bold; font-size: 0.9rem; cursor: pointer; color: #ffeaac;
+  font-family: monospace; width: 100%; margin: 4px 0; touch-action: manipulation;
+}
+.mode-btn:active { transform: scale(0.97); }
+.mode-btn.bots { background: #3a6e3a; }
+.mode-btn.ctf { background: #2a6e5a; }
+.mode-btn.pvp { background: #8b5a2a; }
+.mode-btn.online { background: #3a5a8a; }
+.mode-btn.selected { background: #d9a13b; color: #1a2a0e; box-shadow: 0 0 12px #ffcc66; }
+.map-btn {
+  background: #3a2a4a; border: 2px solid #8a6aaa; border-radius: 30px;
+  padding: 8px; font-weight: bold; font-size: 0.75rem; cursor: pointer;
+  color: #e8ccff; font-family: monospace; width: 48%; margin: 3px 1%;
+  touch-action: manipulation; display: inline-block;
+}
+.map-btn.selected { background: #8a5aaa; color: #fff; }
+.players-btn {
+  background: #2a4a5a; border: 2px solid #6aaaaa; border-radius: 30px;
+  padding: 8px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
+  color: #cceeff; font-family: monospace; width: 30%; margin: 3px 1%;
+  touch-action: manipulation; display: inline-block;
+}
+.players-btn.selected { background: #4a8aaa; color: #fff; }
+.network-panel { background: #0e180c; border-radius: 20px; padding: 12px; margin-top: 8px; }
+.network-panel input {
+  background: #2c2a1c; border: 2px solid #b99a4a; padding: 9px; border-radius: 30px;
+  font-family: monospace; color: #ffeaaf; font-size: 0.85rem; width: 100%;
+  margin: 4px 0; text-align: center;
+}
+.network-panel .check-btn {
+  background: #3a5a8a; border: 2px solid #6aaaee; border-radius: 30px;
+  padding: 8px; color: #cceeff; font-family: monospace; font-size: 0.8rem;
+  font-weight: bold; cursor: pointer; width: 100%; margin: 4px 0;
+}
+.network-panel .check-btn:active { transform: scale(0.97); }
+.status-text { color: #cfc68f; font-size: 0.7rem; margin-top: 6px; text-align: center; min-height: 2.5em; }
+.status-text.ok { color: #88dd66; }
+.status-text.err { color: #ff6666; }
+.status-text.info { color: #aaccff; }
+.hint { font-size: 0.6rem; color: #8a8a6a; margin-top: 6px; line-height: 1.3; }
+.game-container {
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; height: 100vh; padding: 4px; touch-action: none;
+}
+.info {
+  display: flex; justify-content: space-between; width: 100%; max-width: 800px;
+  padding: 6px 14px; background: #1e1b14cc; border-radius: 30px; color: #f7ecc7;
+  font-weight: bold; font-size: 0.75rem; margin-bottom: 4px; flex-shrink: 0;
+}
+canvas {
+  box-shadow: 0 0 0 3px #ab8743, 0 10px 25px black; border-radius: 14px;
+  width: 100%; height: auto; max-width: 800px; touch-action: none;
+  background: #2d2a24; flex-shrink: 0;
+}.touch-controls {
+  display: flex; justify-content: space-between; align-items: center;
+  width: 100%; max-width: 800px; padding: 8px 12px; margin-top: 6px;
+  flex-shrink: 0; gap: 20px;
+}
+.joystick { position: relative; width: 170px; height: 170px; touch-action: none; }
+.joystick-base {
+  position: absolute; top: 0; left: 0; width: 170px; height: 170px;
+  background: radial-gradient(circle, #2c241a, #1a150e);
+  border: 3px solid #b99a4a; border-radius: 50%;
+  box-shadow: inset 0 0 15px #000, 0 3px 0 #5a3a1a;
+}
+.joystick-cross {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 100%; height: 100%; pointer-events: none;
+}
+.joystick-cross::before {
+  content: ''; position: absolute; top: 50%; left: 15%; width: 70%; height: 4px;
+  background: #5a4a2a; transform: translateY(-50%); border-radius: 2px;
+}
+.joystick-cross::after {
+  content: ''; position: absolute; left: 50%; top: 15%; width: 4px; height: 70%;
+  background: #5a4a2a; transform: translateX(-50%); border-radius: 2px;
+}
+.joystick-knob {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 65px; height: 65px; background: radial-gradient(circle, #d9a13b, #8b5a1a);
+  border: 3px solid #ffdd88; border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.6); transition: 0.05s linear; pointer-events: none;
+}
+.joystick-arrow {
+  position: absolute; color: #ffdd88; font-size: 1rem; font-weight: bold;
+  pointer-events: none; text-shadow: 0 0 3px black;
+}
+.joystick-arrow.up { top: 6px; left: 50%; transform: translateX(-50%); }
+.joystick-arrow.down { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.joystick-arrow.left { left: 6px; top: 50%; transform: translateY(-50%); }
+.joystick-arrow.right { right: 6px; top: 50%; transform: translateY(-50%); }
+.action-buttons { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.fire-btn {
+  background: #8b2a1a; border: 3px solid #ff6644; border-radius: 50%;
+  width: 90px; height: 90px; font-size: 2.4rem; color: white;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: none; cursor: pointer; box-shadow: 0 4px 0 #4a150a;
+}
+.fire-btn:active { transform: scale(0.92); box-shadow: 0 1px 0 #4a150a; }
+.small-btn {
+  background: #3a5a3a; border: 2px solid #88aa44; border-radius: 30px;
+  padding: 6px 14px; color: #ffeaac; font-size: 0.7rem; font-weight: bold;
+  touch-action: none; cursor: pointer; font-family: monospace; width: 90px;
+}
+.small-btn:active { transform: scale(0.95); }
+.back-btn {
+  background: #5a4a2e; border: 2px solid #b99a4a; border-radius: 30px;
+  padding: 6px 14px; color: #ffeaac; font-size: 0.7rem; font-weight: bold;
+  touch-action: none; cursor: pointer; font-family: monospace; width: 90px;
+}
+.back-btn:active { transform: scale(0.95); }
+@media (min-width: 860px) { .touch-controls { display: none; } }
+@media (max-width: 550px) {
+  .joystick, .joystick-base { width: 140px; height: 140px; }
+  .joystick-knob { width: 55px; height: 55px; }
+  .fire-btn { width: 75px; height: 75px; font-size: 2rem; }
+  .small-btn, .back-btn { width: 75px; font-size: 0.6rem; padding: 4px 8px; }
+  .info { font-size: 0.6rem; padding: 4px 10px; }
+}
+@media (max-width: 400px) {
+  .joystick, .joystick-base { width: 120px; height: 120px; }
+  .joystick-knob { width: 45px; height: 45px; }
+  .fire-btn { width: 65px; height: 65px; font-size: 1.6rem; }
+  .small-btn, .back-btn { width: 65px; font-size: 0.5rem; }
+  .info { font-size: 0.5rem; padding: 3px 8px; }
+  .touch-controls { padding: 4px 8px; gap: 10px; }
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="menu" class="menu">
+  <h1>TANK BRAWL</h1>
+  <h2>🎮 Способ игры:</h2>
+  <button class="mode-btn bots" id="btnOffline" onclick="selectSource('offline', this)">🎮 ОФЛАЙН (на 1 ПК)</button>
+  <button class="mode-btn online" id="btnOnline" onclick="selectSource('online', this)">🌐 ПО СЕТИ (Hamachi)</button>
+
+  <div id="offlineModes" style="display:none;">
+    <h2>🎯 Офлайн режим:</h2>
+    <button class="mode-btn bots" data-mode="bots" onclick="selectMode('bots', this)">🎮 ПРОТИВ БОТОВ</button>
+    <button class="mode-btn ctf" data-mode="ctf" onclick="selectMode('ctf', this)">🏁 ЗАХВАТ ФЛАГА</button>
+    <button class="mode-btn pvp" data-mode="pvp" onclick="selectMode('pvp', this)">⚔️ PVP 2 ИГРОКА</button>
+  </div>
+
+  <div id="onlineModes" style="display:none;">
+    <h2>🎯 Сетевой режим:</h2>
+    <button class="mode-btn bots" data-mode="bots" onclick="selectMode('bots', this)">🌐 ПРОТИВ БОТОВ</button>
+    <button class="mode-btn ctf" data-mode="ctf" onclick="selectMode('ctf', this)">🌐 ЗАХВАТ ФЛАГА</button>
+    <button class="mode-btn pvp" data-mode="pvp" onclick="selectMode('pvp', this)">🌐 PVP (все против всех)</button>
+    <h2>👥 Игроков:</h2>
+    <div>
+      <button class="players-btn" data-players="2" onclick="selectPlayers(2, this)">2</button>
+      <button class="players-btn" data-players="4" onclick="selectPlayers(4, this)">4</button>
+      <button class="players-btn" data-players="8" onclick="selectPlayers(8, this)">8</button>
+    </div>
+    <div id="networkPanel" class="network-panel">
+      <input type="text" id="serverIp" placeholder="Hamachi-IP (25.x.x.x)" value="25.4.96.106">
+      <input type="text" id="serverPort" placeholder="Порт" value="8080">
+      <button class="check-btn" onclick="checkConnection()">🔍 Проверить соединение</button>
+      <div id="netStatus" class="status-text info">Введи Hamachi-IP сервера и нажми «Проверить»</div>
+      <div class="hint">⚠️ Для сетевой игры на ПК хоста должен быть запущен сервер на порту 8080.</div>
+    </div>
+  </div>
+
+  <h2>🗺️ Карта:</h2>
+  <div>
+    <button class="map-btn" data-map="1" onclick="selectMap(1, this)">🗺️ Классика</button>
+    <button class="map-btn" data-map="2" onclick="selectMap(2, this)">🗺️ Battle City</button>
+    <button class="map-btn" data-map="3" onclick="selectMap(3, this)">🗺️ Лабиринт</button>
+    <button class="map-btn" data-map="4" onclick="selectMap(4, this)">🗺️ Крепость</button>
+  </div>
+
+  <button id="startBtn" class="mode-btn online" style="margin-top:12px; font-size:1rem;" onclick="startSelectedMode()">▶ НАЧАТЬ ИГРУ</button>
+  		<a target="_blnk" href="https://vid209.github.io/M-STUDIO-website/" style="color:#d8d8d8">https://vid209.github.io/M-STUDIO-website/</a>
+</div><div id="game" class="game-container hidden">
+  <div class="info">
+    <span>❤️ <span id="healthValue">3</span></span>
+    <span>⭐ <span id="scoreValue">0</span></span>
+    <span id="modeLabel">🎮 РЕЖИМ</span>
+    <span id="mapLabel">🗺️ Классика</span>
+    <span id="playersLabel">👥 1</span>
+  </div>
+  <canvas id="canvas" width="800" height="600"></canvas>
+  <div class="touch-controls" id="touchControls">
+    <div class="joystick" id="joystick">
+      <div class="joystick-base"></div>
+      <div class="joystick-cross"></div>
+      <div class="joystick-arrow up">▲</div>
+      <div class="joystick-arrow down">▼</div>
+      <div class="joystick-arrow left">◀</div>
+      <div class="joystick-arrow right">▶</div>
+      <div class="joystick-knob" id="joystickKnob"></div>
+    </div>
+    <div class="action-buttons">
+      <button class="fire-btn" id="btnFire">💥</button>
+      <button class="small-btn" id="btnRestart">🔄 R</button>
+      <button class="back-btn" id="backBtn">🏠 МЕНЮ</button>
+    </div>
+  </div>
+  <div id="onlineStatus" class="status-text" style="margin-top:4px;color:#88aa44;"></div>
+  
+</div>
+
+<script>
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+var currentMode = null;
+var gameSource = null;
+var gameRunning = false;
+var gameOver = false;
+var score = 0;
+var bricks = [];
+var ws = null;
+var myId = null;
+var players = new Map();
+var lastSend = 0;
+var currentMap = 1;
+var maxPlayers = 2;
+var connectTimeout = null;
+
+var selectedSource = null;
+var selectedMode = null;
+var selectedMap = 1;
+var selectedPlayers = 2;
+
+var p1 = { x: 380, y: 520, w: 40, h: 40, dir: 0, health: 3 };
+var p1Bullet = { active: false, x: 0, y: 0, speedX: 0, speedY: 0 };
+var p1Delay = 0;
+var p2 = null;
+var p2Bullet = { active: false, x: 0, y: 0, speedX: 0, speedY: 0 };
+var p2Delay = 0;
+var enemies = [];
+var enemyBullets = [];
+var flag = { x: 700, y: 80, w: 28, h: 28, captured: false, carrier: null };
+var keys = { left: false, right: false, up: false, down: false, fire: false };
+var keysP2 = { left: false, right: false, up: false, down: false, fire: false };var MAPS = {
+  1: { name: 'Классика', build: function() {
+    var arr = [];
+    for (var i = 0; i < 20; i++) { arr.push({ x: i*42, y: 0, w: 38, h: 38 }); arr.push({ x: i*42, y: 562, w: 38, h: 38 }); }
+    for (var i = 0; i < 15; i++) { arr.push({ x: 0, y: i*42, w: 38, h: 38 }); arr.push({ x: 762, y: i*42, w: 38, h: 38 }); }
+    for (var i = 3; i < 18; i += 4) for (var j = 4; j < 10; j += 2) arr.push({ x: i*42, y: j*42, w: 38, h: 38 });
+    return arr;
+  }},
+  2: { name: 'Battle City', build: function() {
+    var arr = [];
+    for (var i = 0; i < 20; i++) { arr.push({ x: i*42, y: 0, w: 38, h: 38 }); arr.push({ x: i*42, y: 562, w: 38, h: 38 }); }
+    for (var i = 0; i < 15; i++) { arr.push({ x: 0, y: i*42, w: 38, h: 38 }); arr.push({ x: 762, y: i*42, w: 38, h: 38 }); }
+    for (var i = 6; i <= 13; i++) { arr.push({ x: i*42, y: 6*42, w: 38, h: 38 }); arr.push({ x: i*42, y: 8*42, w: 38, h: 38 }); }
+    for (var j = 3; j <= 6; j++) { arr.push({ x: 9*42, y: j*42, w: 38, h: 38 }); arr.push({ x: 10*42, y: j*42, w: 38, h: 38 }); }
+    for (var j = 8; j <= 11; j++) { arr.push({ x: 9*42, y: j*42, w: 38, h: 38 }); arr.push({ x: 10*42, y: j*42, w: 38, h: 38 }); }
+    arr.push({ x: 3*42, y: 3*42, w: 38, h: 38 }); arr.push({ x: 16*42, y: 3*42, w: 38, h: 38 });
+    arr.push({ x: 3*42, y: 11*42, w: 38, h: 38 }); arr.push({ x: 16*42, y: 11*42, w: 38, h: 38 });
+    return arr;
+  }},
+  3: { name: 'Лабиринт', build: function() {
+    var arr = [];
+    for (var i = 0; i < 20; i++) { arr.push({ x: i*42, y: 0, w: 38, h: 38 }); arr.push({ x: i*42, y: 562, w: 38, h: 38 }); }
+    for (var i = 0; i < 15; i++) { arr.push({ x: 0, y: i*42, w: 38, h: 38 }); arr.push({ x: 762, y: i*42, w: 38, h: 38 }); }
+    for (var j = 2; j <= 6; j++) { arr.push({ x: 4*42, y: j*42, w: 38, h: 38 }); arr.push({ x: 15*42, y: j*42, w: 38, h: 38 }); }
+    for (var j = 8; j <= 12; j++) { arr.push({ x: 4*42, y: j*42, w: 38, h: 38 }); arr.push({ x: 15*42, y: j*42, w: 38, h: 38 }); }
+    for (var i = 7; i <= 12; i++) { arr.push({ x: i*42, y: 4*42, w: 38, h: 38 }); arr.push({ x: i*42, y: 10*42, w: 38, h: 38 }); }
+    return arr;
+  }},
+  4: { name: 'Крепость', build: function() {
+    var arr = [];
+    for (var i = 0; i < 20; i++) { arr.push({ x: i*42, y: 0, w: 38, h: 38 }); arr.push({ x: i*42, y: 562, w: 38, h: 38 }); }
+    for (var i = 0; i < 15; i++) { arr.push({ x: 0, y: i*42, w: 38, h: 38 }); arr.push({ x: 762, y: i*42, w: 38, h: 38 }); }
+    for (var i = 8; i <= 11; i++) { arr.push({ x: i*42, y: 5*42, w: 38, h: 38 }); arr.push({ x: i*42, y: 10*42, w: 38, h: 38 }); }
+    for (var j = 6; j <= 9; j++) { arr.push({ x: 8*42, y: j*42, w: 38, h: 38 }); arr.push({ x: 11*42, y: j*42, w: 38, h: 38 }); }
+    for (var i = 2; i <= 4; i++) for (var j = 2; j <= 4; j++) {
+      arr.push({ x: i*42, y: j*42, w: 38, h: 38 }); arr.push({ x: (17-i)*42, y: j*42, w: 38, h: 38 });
+      arr.push({ x: i*42, y: (13-j)*42, w: 38, h: 38 }); arr.push({ x: (17-i)*42, y: (13-j)*42, w: 38, h: 38 });
+    }
+    return arr;
+  }}
+};
+
+function buildBricks() { return MAPS[currentMap].build(); }
+
+function collide(r1, r2) {
+  return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
+}
+
+function updateUI() {
+  document.getElementById('healthValue').innerText = p1.health;
+  document.getElementById('scoreValue').innerText = score;
+  document.getElementById('mapLabel').innerText = '🗺️ ' + MAPS[currentMap].name;
+  document.getElementById('playersLabel').innerText = '👥 ' + (players.size + 1) + '/' + maxPlayers;
+}
+
+function restart() {
+  gameOver = false; score = 0;
+  p1 = { x: 380, y: 520, w: 40, h: 40, dir: 0, health: 3 };
+  p1Bullet = { active: false, x: 0, y: 0, speedX: 0, speedY: 0 };
+  p1Delay = 0;
+  bricks = buildBricks();
+  flag = { x: 700, y: 80, w: 28, h: 28, captured: false, carrier: null };
+  enemies = []; enemyBullets = [];
+  if (currentMode === 'pvp' && gameSource === 'offline') {
+    p2 = { x: 380, y: 80, w: 40, h: 40, dir: 1, health: 3 };
+    p2Bullet = { active: false, x: 0, y: 0, speedX: 0, speedY: 0 };
+    p2Delay = 0;
+  } else if (currentMode === 'bots' || currentMode === 'ctf') {
+    for (var i = 0; i < 3; i++) enemies.push({ x: 100 + i*250, y: 80, w: 40, h: 40, dir: 1, moveTimer: 0, shootTimer: Math.floor(Math.random()*50) });
+  }
+  updateUI();
+}
+
+function moveTank(tank, dx, dy, newDir) {
+  var newX = tank.x + dx, newY = tank.y + dy;
+  if (newX < 2) newX = 2; if (newX > 758) newX = 758;
+  if (newY < 2) newY = 2; if (newY > 558) newY = 558;
+  var oldX = tank.x, oldY = tank.y;
+  tank.x = newX; tank.y = newY; tank.dir = newDir;
+  for (var i = 0; i < bricks.length; i++) {
+    if (collide({x: tank.x, y: tank.y, w: 40, h: 40}, bricks[i])) { tank.x = oldX; tank.y = oldY; break; }
+  }
+}
+
+function shoot(tank, bullet, isP1) {
+  if (bullet.active) return;
+  if (isP1 && p1Delay > 0) return;
+  if (!isP1 && p2Delay > 0) return;
+  if (isP1) p1Delay = 15; else p2Delay = 15;
+  bullet.active = true;
+  if (tank.dir === 0) { bullet.x = tank.x+16; bullet.y = tank.y; bullet.speedX = 0; bullet.speedY = -8; }
+  else if (tank.dir === 1) { bullet.x = tank.x+16; bullet.y = tank.y+40; bullet.speedX = 0; bullet.speedY = 8; }
+  else if (tank.dir === 2) { bullet.x = tank.x; bullet.y = tank.y+16; bullet.speedX = -8; bullet.speedY = 0; }
+  else { bullet.x = tank.x+40; bullet.y = tank.y+16; bullet.speedX = 8; bullet.speedY = 0; }
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'shoot', bullet: bullet, dir: tank.dir }));
+}function updateBullet(bullet, isP1Bullet) {
+  if (!bullet.active) return;
+  bullet.x += bullet.speedX; bullet.y += bullet.speedY;
+  if (bullet.x < -50 || bullet.x > 850 || bullet.y < -50 || bullet.y > 650) { bullet.active = false; return; }
+  var br = { x: bullet.x, y: bullet.y, w: 8, h: 8 };
+  for (var i = 0; i < bricks.length; i++) {
+    if (collide(br, bricks[i])) { bricks.splice(i,1); bullet.active = false; if (isP1Bullet) { score += 10; updateUI(); } return; }
+  }
+  if (currentMode === 'pvp' && gameSource === 'offline' && p2 && collide(br, {x: p2.x, y: p2.y, w: 40, h: 40})) {
+    p2.health--; bullet.active = false;
+    if (isP1Bullet) { score += 50; updateUI(); }
+    if (p2.health <= 0) { score += 200; updateUI(); gameOver = true; }
+    return;
+  }
+  var hit = false;
+  players.forEach(function(player, id) {
+    if (hit) return;
+    if (collide(br, {x: player.x, y: player.y, w: 40, h: 40})) {
+      player.health--; bullet.active = false; hit = true;
+      if (isP1Bullet) { score += 50; updateUI(); }
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'damage', targetId: id, health: player.health }));
+      if (player.health <= 0) { players.delete(id); score += 200; updateUI(); }
+    }
+  });
+  if (hit) return;
+  for (var i = 0; i < enemies.length; i++) {
+    if (collide(br, {x: enemies[i].x, y: enemies[i].y, w: 40, h: 40})) {
+      enemies.splice(i,1); bullet.active = false;
+      if (isP1Bullet) { score += 100; updateUI(); } return;
+    }
+  }
+}
+
+function botBlocked(e, dir) {
+  var nx = e.x, ny = e.y;
+  if (dir === 0) ny -= 4; else if (dir === 1) ny += 4;
+  else if (dir === 2) nx -= 4; else nx += 4;
+  if (nx < 2 || nx > 758 || ny < 2 || ny > 558) return true;
+  for (var k = 0; k < bricks.length; k++) if (collide({x: nx, y: ny, w: 40, h: 40}, bricks[k])) return true;
+  return false;
+}
+
+function pathClear(x1, y1, x2, y2) {
+  var dx = x2-x1, dy = y2-y1;
+  var dist = Math.sqrt(dx*dx + dy*dy);
+  var steps = Math.ceil(dist/18);
+  if (steps < 2) return true;
+  for (var s = 1; s < steps; s++) {
+    var px = x1 + dx*s/steps, py = y1 + dy*s/steps;
+    for (var k = 0; k < bricks.length; k++) {
+      var b = bricks[k];
+      if (px >= b.x && px <= b.x+b.w && py >= b.y && py <= b.y+b.h) return false;
+    }
+  }
+  return true;
+}
+
+function botShoot(e) {
+  var eb = { x: 0, y: 0, w: 8, h: 8, speedX: 0, speedY: 0 };
+  if (e.dir === 0) { eb.x = e.x+16; eb.y = e.y; eb.speedY = -6; }
+  else if (e.dir === 1) { eb.x = e.x+16; eb.y = e.y+40; eb.speedY = 6; }
+  else if (e.dir === 2) { eb.x = e.x; eb.y = e.y+16; eb.speedX = -6; }
+  else { eb.x = e.x+40; eb.y = e.y+16; eb.speedX = 6; }
+  enemyBullets.push(eb);
+}
+
+function updateEnemies() {
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    e.moveTimer++; e.shootTimer++;
+    var ecx = e.x+20, ecy = e.y+20;
+    var pcx = p1.x+20, pcy = p1.y+20;
+    var sameRow = Math.abs(pcy-ecy) < 28;
+    var sameCol = Math.abs(pcx-ecx) < 28;
+    var canSee = (sameRow || sameCol) && pathClear(ecx, ecy, pcx, pcy);
+    var dirToPlayer;
+    if (Math.abs(pcx-ecx) > Math.abs(pcy-ecy)) dirToPlayer = (pcx > ecx) ? 3 : 2;
+    else dirToPlayer = (pcy > ecy) ? 1 : 0;
+    var acted = false;
+    if (p1Bullet.active) {
+      var bx = p1Bullet.x, by = p1Bullet.y;
+      if (p1Bullet.speedY === 0 && Math.abs(by-ecy) < 26) {
+        var coming = (p1Bullet.speedX > 0 && bx < e.x) || (p1Bullet.speedX < 0 && bx > e.x+40);
+        if (coming && Math.abs(bx-ecx) < 240) {
+          if (!botBlocked(e, 0)) e.dir = 0;
+          else if (!botBlocked(e, 1)) e.dir = 1;
+          else e.dir = dirToPlayer;
+          acted = true;
+        }
+      }
+      if (!acted && p1Bullet.speedX === 0 && Math.abs(bx-ecx) < 26) {
+        var coming2 = (p1Bullet.speedY > 0 && by < e.y) || (p1Bullet.speedY < 0 && by > e.y+40);
+        if (coming2 && Math.abs(by-ecy) < 240) {
+          if (!botBlocked(e, 2)) e.dir = 2;
+          else if (!botBlocked(e, 3)) e.dir = 3;
+          else e.dir = dirToPlayer;
+          acted = true;
+        }
+      }
+    }
+    if (!acted) {
+      if (canSee) {
+        if (sameRow) e.dir = (pcx > ecx) ? 3 : 2;
+        else e.dir = (pcy > ecy) ? 1 : 0;
+      } else if (e.moveTimer > 10) {
+        e.moveTimer = 0;
+        if (!botBlocked(e, dirToPlayer)) {
+          e.dir = dirToPlayer;
+        } else {
+          var alt1, alt2;
+          if (dirToPlayer === 0 || dirToPlayer === 1) { alt1 = (pcx > ecx) ? 3 : 2; alt2 = (pcx > ecx) ? 2 : 3; }
+          else { alt1 = (pcy > ecy) ? 1 : 0; alt2 = (pcy > ecy) ? 0 : 1; }
+          if (!botBlocked(e, alt1)) e.dir = alt1;
+          else if (!botBlocked(e, alt2)) e.dir = alt2;
+          else {
+            var back = (dirToPlayer === 0) ? 1 : (dirToPlayer === 1) ? 0 : (dirToPlayer === 2) ? 3 : 2;
+            if (!botBlocked(e, back)) e.dir = back;
+          }
+        }
+      }
+    }
+    var sp = canSee ? 3 : 2;
+    var oldX = e.x, oldY = e.y;
+    if (e.dir === 0) e.y -= sp; else if (e.dir === 1) e.y += sp;
+    else if (e.dir === 2) e.x -= sp; else if (e.dir === 3) e.x += sp;
+    if (e.x < 2) e.x = 2; if (e.x > 758) e.x = 758;
+    if (e.y < 2) e.y = 2; if (e.y > 558) e.y = 558;
+    for (var k = 0; k < bricks.length; k++) {
+      if (collide({x: e.x, y: e.y, w: 40, h: 40}, bricks[k])) { e.x = oldX; e.y = oldY; e.moveTimer = 10; break; }
+    }
+    if (canSee && e.shootTimer > 38) { e.shootTimer = 0; botShoot(e); }
+    if (!canSee && e.shootTimer > 70) {
+      var fx = ecx, fy = ecy;
+      if (e.dir === 0) fy -= 30; else if (e.dir === 1) fy += 30;
+      else if (e.dir === 2) fx -= 30; else fx += 30;
+      for (var k = 0; k < bricks.length; k++) {
+        if (collide({x: fx-4, y: fy-4, w: 8, h: 8}, bricks[k])) { e.shootTimer = 0; botShoot(e); break; }
+      }
+    }
+  }
+  if (enemies.length === 0 && !gameOver && (currentMode === 'bots' || currentMode === 'ctf')) {
+    for (var i = 0; i < 3; i++) enemies.push({ x: 100 + i*250, y: 80, w: 40, h: 40, dir: 1, moveTimer: Math.floor(Math.random()*10), shootTimer: Math.floor(Math.random()*50) });
+  }
+}
+
+function updateEnemyBullets() {
+  for (var i = 0; i < enemyBullets.length; i++) {
+    var eb = enemyBullets[i];
+    eb.x += eb.speedX; eb.y += eb.speedY;
+    if (eb.x < -50 || eb.x > 850 || eb.y < -50 || eb.y > 650) { enemyBullets.splice(i,1); i--; continue; }
+    var br = { x: eb.x, y: eb.y, w: 8, h: 8 };
+    if (collide(br, {x: p1.x, y: p1.y, w: 40, h: 40})) {
+      p1.health--; updateUI(); enemyBullets.splice(i,1); i--;
+      if (p1.health <= 0) gameOver = true;
+      continue;
+    }
+    if (currentMode === 'pvp' && gameSource === 'offline' && p2 && collide(br, {x: p2.x, y: p2.y, w: 40, h: 40})) {
+      p2.health--; enemyBullets.splice(i,1); i--;
+      if (p2.health <= 0) gameOver = true;
+      continue;
+    }
+    for (var j = 0; j < bricks.length; j++) {
+      if (collide(br, bricks[j])) { bricks.splice(j,1); enemyBullets.splice(i,1); i--; break; }
+    }
+  }
+}
+
+function updateCTF() {
+  if (currentMode !== 'ctf') return;
+  var fr = { x: flag.x, y: flag.y, w: flag.w, h: flag.h };
+  var tr = { x: p1.x, y: p1.y, w: 40, h: 40 };
+  if (!flag.captured && collide(tr, fr)) { flag.captured = true; flag.carrier = 'player'; score += 150; updateUI(); }
+  if (flag.captured && flag.carrier === 'player') {
+    var base = { x: 50, y: 520, w: 30, h: 30 };
+    if (collide(tr, base)) {
+      score += 500; updateUI();
+      flag.captured = false; flag.carrier = null; flag.x = 700; flag.y = 80;
+    } else { flag.x = p1.x + 6; flag.y = p1.y + 6; }
+  }
+}
+
+function sendPosition() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'pos', x: p1.x, y: p1.y, dir: p1.dir, health: p1.health }));
+  }
+}
+
+function updateGame() {
+  if (gameOver || p1.health <= 0) { if (p1.health <= 0) gameOver = true; return; }
+  if (keys.left) moveTank(p1, -4, 0, 2);
+  if (keys.right) moveTank(p1, 4, 0, 3);
+  if (keys.up) moveTank(p1, 0, -4, 0);
+  if (keys.down) moveTank(p1, 0, 4, 1);
+  if (p1Delay > 0) p1Delay--;
+  if (keys.fire && !p1Bullet.active && p1Delay === 0) shoot(p1, p1Bullet, true);
+  updateBullet(p1Bullet, true);
+  if (currentMode === 'pvp' && gameSource === 'offline' && p2) {
+    if (keysP2.left) moveTank(p2, -4, 0, 2);
+    if (keysP2.right) moveTank(p2, 4, 0, 3);
+    if (keysP2.up) moveTank(p2, 0, -4, 0);
+    if (keysP2.down) moveTank(p2, 0, 4, 1);
+    if (p2Delay > 0) p2Delay--;
+    if (keysP2.fire && !p2Bullet.active && p2Delay === 0) shoot(p2, p2Bullet, false);
+    updateBullet(p2Bullet, false);
+  }
+  if (currentMode === 'bots' || currentMode === 'ctf') { updateEnemies(); updateEnemyBullets(); }
+  if (currentMode === 'ctf') updateCTF();
+  if (gameSource === 'online' && ws && ws.readyState === WebSocket.OPEN) {
+    var now = Date.now();
+    if (now - lastSend > 50) { sendPosition(); lastSend = now; }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, 800, 600);
+  ctx.fillStyle = '#2d2a24'; ctx.fillRect(0, 0, 800, 600);
+  for (var i = 0; i < bricks.length; i++) {
+    var b = bricks[i];
+    ctx.fillStyle = '#b87c3a'; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = '#e6a155'; ctx.fillRect(b.x+2, b.y+2, b.w-4, 5);
+  }
+  if (currentMode === 'ctf') {
+    if (!flag.captured || flag.carrier !== 'player') {
+      ctx.fillStyle = '#dc3c2a'; ctx.fillRect(flag.x, flag.y, flag.w, flag.h);
+      ctx.fillStyle = '#ffcc44'; ctx.font = 'bold 20px monospace'; ctx.fillText('🏁', flag.x+5, flag.y+22);
+    }
+    ctx.fillStyle = '#88aa44'; ctx.fillRect(50, 520, 30, 30);
+    ctx.fillStyle = 'gold'; ctx.fillText('🏠', 57, 542);
+  }
+  var colorIndex = 0;
+  var colors = ['#c44f2a', '#2a6ec4', '#c4a42a', '#9e2ac4', '#44cc88', '#cc44aa', '#44aacc', '#cc8844'];
+  players.forEach(function(player) {
+    ctx.fillStyle = colors[colorIndex % colors.length];
+    ctx.fillRect(player.x, player.y, 40, 40);
+    ctx.fillStyle = '#ffaa66';
+    var ex = player.x + 20, ey = player.y + 20;
+    if (player.dir === 0) ctx.fillRect(ex-3, player.y-6, 6, 10);
+    else if (player.dir === 1) ctx.fillRect(ex-3, player.y+36, 6, 10);
+    else if (player.dir === 2) ctx.fillRect(player.x-6, ey-3, 10, 6);
+    else ctx.fillRect(player.x+36, ey-3, 10, 6);
+    ctx.fillStyle = 'white'; ctx.font = '11px monospace';
+    ctx.fillText('❤️'+player.health, player.x+3, player.y-5);
+    colorIndex++;
+  });
+  ctx.fillStyle = '#4f9e32'; ctx.fillRect(p1.x, p1.y, 40, 40);
+  ctx.fillStyle = '#f5d742';
+  var cx = p1.x + 20, cy = p1.y + 20;
+  if (p1.dir === 0) ctx.fillRect(cx-4, p1.y-8, 8, 12);
+  else if (p1.dir === 1) ctx.fillRect(cx-4, p1.y+32, 8, 12);
+  else if (p1.dir === 2) ctx.fillRect(p1.x-8, cy-4, 12, 8);
+  else ctx.fillRect(p1.x+32, cy-4, 12, 8);
+  if (currentMode === 'pvp' && gameSource === 'offline' && p2) {
+    ctx.fillStyle = '#c44f2a'; ctx.fillRect(p2.x, p2.y, 40, 40);
+    ctx.fillStyle = '#ffaa66';
+    var ex = p2.x + 20, ey = p2.y + 20;
+    if (p2.dir === 0) ctx.fillRect(ex-3, p2.y-6, 6, 10);
+    else if (p2.dir === 1) ctx.fillRect(ex-3, p2.y+36, 6, 10);
+    else if (p2.dir === 2) ctx.fillRect(p2.x-6, ey-3, 10, 6);
+    else ctx.fillRect(p2.x+36, ey-3, 10, 6);
+    ctx.fillStyle = 'white'; ctx.font = '11px monospace';
+    ctx.fillText('❤️'+p2.health, p2.x+3, p2.y-5);
+  }
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    ctx.fillStyle = '#bd6a32'; ctx.fillRect(e.x, e.y, 40, 40);
+    ctx.fillStyle = '#d17e42';
+    var ex = e.x + 20, ey = e.y + 20;
+    if (e.dir === 0) ctx.fillRect(ex-3, e.y-6, 6, 10);
+    else if (e.dir === 1) ctx.fillRect(ex-3, e.y+36, 6, 10);
+    else if (e.dir === 2) ctx.fillRect(e.x-6, ey-3, 10, 6);
+    else ctx.fillRect(e.x+36, ey-3, 10, 6);
+  }
+  if (p1Bullet.active) { ctx.fillStyle = '#ffcc44'; ctx.fillRect(p1Bullet.x, p1Bullet.y, 8, 8); }
+  if (currentMode === 'pvp' && gameSource === 'offline' && p2Bullet.active) { ctx.fillStyle = '#ff6644'; ctx.fillRect(p2Bullet.x, p2Bullet.y, 8, 8); }
+  for (var i = 0; i < enemyBullets.length; i++) {
+    var eb = enemyBullets[i];
+    ctx.fillStyle = '#ff4400'; ctx.fillRect(eb.x, eb.y, 8, 8);
+  }
+  if (gameOver || p1.health <= 0) {
+    ctx.font = 'bold 36px monospace'; ctx.fillStyle = '#f0d890'; ctx.fillText('GAME OVER', 280, 280);
+    ctx.font = '14px monospace'; ctx.fillStyle = '#c9aa6a'; ctx.fillText('R - рестарт', 340, 340);
+  }
+}window.selectSource = function(source, btn) {
+  selectedSource = source; gameSource = source;
+  var allBtns = document.querySelectorAll('.mode-btn');
+  for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('selected');
+  btn.classList.add('selected');
+  document.getElementById('offlineModes').style.display = source === 'offline' ? 'block' : 'none';
+  document.getElementById('onlineModes').style.display = source === 'online' ? 'block' : 'none';
+};
+
+window.selectMode = function(mode, btn) {
+  selectedMode = mode;
+  var container = (selectedSource === 'offline') ? 'offlineModes' : 'onlineModes';
+  var allBtns = document.getElementById(container).querySelectorAll('.mode-btn');
+  for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('selected');
+  btn.classList.add('selected');
+};
+
+window.selectMap = function(mapNum, btn) {
+  selectedMap = mapNum; currentMap = mapNum;
+  var allBtns = document.querySelectorAll('.map-btn');
+  for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('selected');
+  btn.classList.add('selected');
+};
+
+window.selectPlayers = function(num, btn) {
+  selectedPlayers = num; maxPlayers = num;
+  var allBtns = document.querySelectorAll('.players-btn');
+  for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('selected');
+  btn.classList.add('selected');
+};
+
+window.checkConnection = function() {
+  var ip = document.getElementById('serverIp').value;
+  var port = document.getElementById('serverPort').value;
+  var status = document.getElementById('netStatus');
+  status.className = 'status-text info';
+  status.innerText = '🔄 Проверка ' + ip + ':' + port + '...';
+  var testWs, done = false;
+  try { testWs = new WebSocket('ws://' + ip + ':' + port); }
+  catch(e) { status.className = 'status-text err'; status.innerText = '❌ Ошибка: ' + e.message; return; }
+  var timer = setTimeout(function() {
+    if (!done) { done = true; status.className = 'status-text err';
+      status.innerText = '❌ Таймаут. Сервер не отвечает на ' + ip + ':' + port + '.';
+      try { testWs.close(); } catch(e) {} }
+  }, 5000);
+  testWs.onopen = function() {
+    if (done) return; done = true; clearTimeout(timer);
+    status.className = 'status-text ok';
+    status.innerText = '✅ Соединение установлено! Сервер работает.';
+    testWs.close();
+  };
+  testWs.onerror = function() {
+    if (done) return; done = true; clearTimeout(timer);
+    status.className = 'status-text err';
+    status.innerText = '❌ Не удалось подключиться к ' + ip + ':' + port + '.';
+  };
+};
+
+window.startSelectedMode = function() {
+  if (!selectedSource) { alert('Выбери способ!'); return; }
+  if (!selectedMode) { alert('Выбери режим!'); return; }
+  var netStatus = document.getElementById('netStatus');
+  if (netStatus) netStatus.className = 'status-text info';
+  if (selectedSource === 'online') {
+    var ip = document.getElementById('serverIp').value;
+    var port = document.getElementById('serverPort').value;
+    connectToServer(ip, port);
+  } else {
+    currentMode = selectedMode; currentMap = selectedMap;
+    gameSource = 'offline'; maxPlayers = 1; gameRunning = true;
+    var modeText = '';
+    if (selectedMode === 'bots') modeText = '🎮 БОТЫ';
+    if (selectedMode === 'ctf') modeText = '🏁 ФЛАГ';
+    if (selectedMode === 'pvp') modeText = '⚔️ PVP';
+    document.getElementById('modeLabel').innerText = modeText;
+    restart();
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('game').classList.remove('hidden');
+  }
+};
+
+function connectToServer(ip, port) {
+  var url = 'ws://' + ip + ':' + port;
+  var status = document.getElementById('netStatus');
+  status.className = 'status-text info';
+  status.innerText = '🔄 Подключение к ' + ip + ':' + port + '...';
+  try { ws = new WebSocket(url); }
+  catch(e) { status.className = 'status-text err'; status.innerText = '❌ Ошибка: ' + e.message; return; }
+  connectTimeout = setTimeout(function() {
+    if (ws && ws.readyState !== WebSocket.OPEN) {
+      status.className = 'status-text err';
+      status.innerText = '❌ Таймаут. Сервер на ' + ip + ':' + port + ' не отвечает.';
+      try { ws.close(); } catch(e) {}
+    }
+  }, 5000);
+  ws.onopen = function() {
+    clearTimeout(connectTimeout);
+    status.className = 'status-text ok';
+    status.innerText = '✅ Подключено!';
+    currentMode = selectedMode; gameSource = 'online';
+    currentMap = selectedMap; maxPlayers = selectedPlayers; gameRunning = true;
+    var modeText = '';
+    if (selectedMode === 'bots') modeText = '🌐 БОТЫ';
+    if (selectedMode === 'ctf') modeText = '🌐 ФЛАГ';
+    if (selectedMode === 'pvp') modeText = '🌐 PVP';
+    document.getElementById('modeLabel').innerText = modeText;
+    restart();
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('game').classList.remove('hidden');
+  };
+  ws.onmessage = function(event) {
+    try {
+      var data = JSON.parse(event.data);
+      if (data.type === 'id') { myId = data.id; document.getElementById('onlineStatus').innerText = '🎮 ID: ' + myId; }
+      if (data.type === 'pos' && data.playerId !== myId) {
+        if (!players.has(data.playerId)) players.set(data.playerId, { x: data.x, y: data.y, dir: data.dir, health: data.health });
+        else { var p = players.get(data.playerId); p.x = data.x; p.y = data.y; p.dir = data.dir; p.health = data.health; }
+        document.getElementById('onlineStatus').innerText = '👥 Игроков: ' + (players.size + 1) + '/' + maxPlayers;
+        updateUI();
+      }
+      if (data.type === 'damage' && data.targetId === myId) { p1.health = data.health; updateUI(); if (p1.health <= 0) gameOver = true; }
+      if (data.type === 'disconnect') { players.delete(data.playerId); updateUI(); }
+    } catch(e) {}
+  };
+  ws.onerror = function() {
+    clearTimeout(connectTimeout);
+    status.className = 'status-text err';
+    status.innerText = '❌ Ошибка подключения. Проверьте IP и порт.';
+  };
+  ws.onclose = function() {
+    clearTimeout(connectTimeout);
+    if (gameRunning) {
+      status.className = 'status-text err';
+      status.innerText = '❌ Соединение потеряно.';
+      setTimeout(exitToMenu, 2000);
+    }
+  };
+}
+
+function exitToMenu() {
+  gameRunning = false;
+  if (ws) { ws.close(); ws = null; }
+  players.clear();
+  document.getElementById('menu').classList.remove('hidden');
+  document.getElementById('game').classList.add('hidden');
+}
+
+document.addEventListener('keydown', function(e) {
+  if (!gameRunning) return;
+  if (e.key === 'ArrowLeft') keys.left = true;
+  if (e.key === 'ArrowRight') keys.right = true;
+  if (e.key === 'ArrowUp') keys.up = true;
+  if (e.key === 'ArrowDown') keys.down = true;
+  if (e.key === ' ') { keys.fire = true; e.preventDefault(); }
+  if (currentMode === 'pvp' && gameSource === 'offline') {
+    if (e.key === 'a') keysP2.left = true;
+    if (e.key === 'd') keysP2.right = true;
+    if (e.key === 'w') keysP2.up = true;
+    if (e.key === 's') keysP2.down = true;
+    if (e.key === 'x') { keysP2.fire = true; e.preventDefault(); }
+  }
+  if (e.key === 'r' || e.key === 'R') restart();
+  if (e.key === 'Escape') exitToMenu();
+});
+
+document.addEventListener('keyup', function(e) {
+  if (e.key === 'ArrowLeft') keys.left = false;
+  if (e.key === 'ArrowRight') keys.right = false;
+  if (e.key === 'ArrowUp') keys.up = false;
+  if (e.key === 'ArrowDown') keys.down = false;
+  if (e.key === ' ') keys.fire = false;
+  if (currentMode === 'pvp' && gameSource === 'offline') {
+    if (e.key === 'a') keysP2.left = false;
+    if (e.key === 'd') keysP2.right = false;
+    if (e.key === 'w') keysP2.up = false;
+    if (e.key === 's') keysP2.down = false;
+    if (e.key === 'x') keysP2.fire = false;
+  }
+});
+
+function setupJoystick() {
+  var joystick = document.getElementById('joystick');
+  var knob = document.getElementById('joystickKnob');
+  var active = false, touchId = null;
+  function handleStart(e) { e.preventDefault(); active = true; if (e.changedTouches) touchId = e.changedTouches[0].identifier; handleMove(e); }
+  function handleMove(e) {
+    if (!active) return;
+    e.preventDefault();
+    var touch = null;
+    if (e.changedTouches && touchId !== null) {
+      for (var i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === touchId) { touch = e.changedTouches[i]; break; }
+    } else if (e.touches && e.touches.length > 0) touch = e.touches[0];
+    else if (e.clientX !== undefined) touch = e;
+    if (!touch) return;
+    var rect = joystick.getBoundingClientRect();
+    var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+    var dx = touch.clientX - cx, dy = touch.clientY - cy;
+    var maxDist = rect.width/2 - 15;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > maxDist) { dx = dx/dist*maxDist; dy = dy/dist*maxDist; }
+    knob.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
+    var th = maxDist*0.3;
+    keys.left = keys.right = keys.up = keys.down = false;
+    if (Math.abs(dx) > Math.abs(dy)) { if (dx > th) keys.right = true; else if (dx < -th) keys.left = true; }
+    else { if (dy > th) keys.down = true; else if (dy < -th) keys.up = true; }
+  }
+  function handleEnd(e) {
+    e.preventDefault(); active = false; touchId = null;
+    knob.style.transform = 'translate(-50%, -50%)';
+    keys.left = keys.right = keys.up = keys.down = false;
+  }
+  joystick.addEventListener('touchstart', handleStart, { passive: false });
+  joystick.addEventListener('touchmove', handleMove, { passive: false });
+  joystick.addEventListener('touchend', handleEnd, { passive: false });
+  joystick.addEventListener('touchcancel', handleEnd, { passive: false });
+  joystick.addEventListener('mousedown', handleStart);
+  joystick.addEventListener('mousemove', function(e) { if (active) handleMove(e); });
+  joystick.addEventListener('mouseup', handleEnd);
+  joystick.addEventListener('mouseleave', handleEnd);
+}
+
+function setupButtons() {
+  var btnFire = document.getElementById('btnFire');
+  var btnRestart = document.getElementById('btnRestart');
+  var backBtn = document.getElementById('backBtn');
+  btnFire.addEventListener('touchstart', function(e) { e.preventDefault(); keys.fire = true; }, { passive: false });
+  btnFire.addEventListener('touchend', function(e) { e.preventDefault(); keys.fire = false; }, { passive: false });
+  btnFire.addEventListener('touchcancel', function(e) { e.preventDefault(); keys.fire = false; }, { passive: false });
+  btnFire.addEventListener('mousedown', function(e) { e.preventDefault(); keys.fire = true; });
+  btnFire.addEventListener('mouseup', function(e) { e.preventDefault(); keys.fire = false; });
+  btnFire.addEventListener('mouseleave', function(e) { e.preventDefault(); keys.fire = false; });
+  btnRestart.addEventListener('click', function(e) { e.preventDefault(); restart(); });
+  btnRestart.addEventListener('touchstart', function(e) { e.preventDefault(); restart(); }, { passive: false });
+  backBtn.addEventListener('click', function(e) { e.preventDefault(); exitToMenu(); });
+  backBtn.addEventListener('touchstart', function(e) { e.preventDefault(); exitToMenu(); }, { passive: false });
+}
+
+setupJoystick();
+setupButtons();
+
+function gameLoop() {
+  if (gameRunning) { updateGame(); draw(); }
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+</script>
+</body>
+</html>

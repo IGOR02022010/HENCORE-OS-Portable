@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>сокращатель ссылок</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0d0f14;
+    color: #e8eaf0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .app { width: 100%; max-width: 560px; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .logo {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 20px;
+  }
+
+  h1 { font-size: 22px; font-weight: 600; }
+  .subtitle { font-size: 13px; color: #8a8fa3; margin-top: 2px; }
+
+  .card {
+    background: #161a23;
+    border: 1px solid #262c3a;
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .input-row { display: flex; gap: 10px; }
+
+  input {
+    flex: 1;
+    background: #0d0f14;
+    border: 1px solid #2e3547;
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: #e8eaf0;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  input:focus { border-color: #6c5ce7; }
+  input::placeholder { color: #565d73; }
+
+  button {
+    background: #6c5ce7;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 22px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+    white-space: nowrap;
+  }
+
+  button:hover { background: #7d6ef0; }
+  button:disabled { background: #3a3f52; cursor: default; }
+
+  .status { margin-top: 14px; font-size: 13px; min-height: 18px; }
+  .status.error { color: #ff7675; }
+  .status.info { color: #8a8fa3; }
+
+  .result {
+    display: none;
+    margin-top: 14px;
+    background: #0d0f14;
+    border: 1px solid #2e3547;
+    border-radius: 10px;
+    padding: 13px 14px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .result.show { display: flex; }
+
+  .result a {
+    flex: 1;
+    color: #a29bfe;
+    text-decoration: none;
+    font-size: 14px;
+    word-break: break-all;
+  }
+
+  .result a:hover { text-decoration: underline; }
+
+  .copy-btn {
+    background: #262c3a;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .copy-btn:hover { background: #333b52; }
+
+  .history { margin-top: 24px; }
+  .history h2 { font-size: 14px; color: #8a8fa3; font-weight: 600; margin-bottom: 10px; }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #161a23;
+    border: 1px solid #262c3a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+  }
+
+  .history-item a { flex: 1; color: #a29bfe; font-size: 13px; text-decoration: none; word-break: break-all; }
+  .history-item span { color: #565d73; font-size: 11px; white-space: nowrap; }
+  .clear-btn { background: none; border: none; color: #565d73; font-size: 12px; padding: 4px; margin-top: 4px; cursor: pointer; }
+  .clear-btn:hover { color: #ff7675; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+
+    <div>
+      <h1>Yandex Clck</h1>
+      <div class="subtitle">Сокращение ссылок</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="input-row">
+      <input type="text" id="urlInput" placeholder="Вставьте ссылку (https://...)" autocomplete="off">
+      <button id="shortenBtn">Сократить</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="result" id="result">
+      <a id="shortLink" target="_blank" rel="noopener"></a>
+      <button class="copy-btn" id="copyBtn">Копировать</button>
+    </div>
+  </div>
+
+  <div class="history">
+    <h2>История</h2>
+    <div id="historyList"></div>
+    <button class="clear-btn" id="clearBtn">Очистить историю</button>
+  </div>
+</div>
+
+<script>
+const API = 'https://clck.ru/--?url=';
+const HISTORY_KEY = 'shinkor_clck_history';
+
+const input = document.getElementById('urlInput');
+const btn = document.getElementById('shortenBtn');
+const status = document.getElementById('status');
+const result = document.getElementById('result');
+const shortLink = document.getElementById('shortLink');
+const copyBtn = document.getElementById('copyBtn');
+const historyList = document.getElementById('historyList');
+const clearBtn = document.getElementById('clearBtn');
+
+let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+
+function renderHistory() {
+  historyList.innerHTML = '';
+  history.slice(0, 10).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    const a = document.createElement('a');
+    a.href = item.short; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = item.short;
+    const span = document.createElement('span');
+    span.textContent = new Date(item.ts).toLocaleDateString('ru-RU');
+    div.appendChild(a); div.appendChild(span);
+    historyList.appendChild(div);
+  });
+}
+
+function normalizeUrl(text) {
+  const t = text.trim();
+  if (!t) return null;
+  if (!/^https?:\/\//i.test(t)) return 'https:
+  return t;
+}
+
+async function shorten() {
+  const url = normalizeUrl(input.value);
+  if (!url) { status.textContent = 'Введите ссылку'; status.className = 'status error'; return; }
+
+  try { new URL(url); } catch {
+    status.textContent = 'Похоже, это не ссылка';
+    status.className = 'status error';
+    return;
+  }
+
+  btn.disabled = true;
+  status.textContent = 'Сокращаю…';
+  status.className = 'status info';
+
+  try {
+    const res = await fetch(API + encodeURIComponent(url));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const short = (await res.text()).trim();
+
+    if (!short.startsWith('http')) throw new Error('Некорректный ответ сервиса');
+
+    shortLink.href = short;
+    shortLink.textContent = short;
+    result.classList.add('show');
+    status.textContent = '';
+
+    history.unshift({ short, ts: Date.now() });
+    history = history.slice(0, 50);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistory();
+  } catch (e) {
+    status.textContent = 'Ошибка: ' + e.message +
+      ' (если пусто — возможно, запрос заблокирован CORS при запуске с file://)';
+    status.className = 'status error';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+btn.addEventListener('click', shorten);
+input.addEventListener('keydown', e => { if (e.key === 'Enter') shorten(); });
+
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(shortLink.href);
+    copyBtn.textContent = 'Готово ✓';
+    setTimeout(() => copyBtn.textContent = 'Копировать', 1500);
+  } catch {
+    const r = document.createRange();
+    r.selectNodeContents(shortLink);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    document.execCommand('copy');
+    copyBtn.textContent = 'Готово ✓';
+    setTimeout(() => copyBtn.textContent = 'Копировать', 1500);
+  }
+});
+
+clearBtn.addEventListener('click', () => {
+  history = [];
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+});
+
+renderHistory();
+</script>
+</body>
+</html>

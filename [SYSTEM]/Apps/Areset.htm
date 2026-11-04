@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Центр востановление</title>
+<style>
+  :root{
+    --bg:#0a0a0a; --panel:#121212; --panel2:#181818;
+    --line:#262626; --text:#ededed; --dim:#8a8a8a; --dimmer:#5a5a5a; --accent:#ffffff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font:14px/1.6 ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    min-height:100vh; padding:0 0 60px;
+  }
+  header{
+    padding:28px 32px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
+  }
+  header h1{font-size:17px; font-weight:600; letter-spacing:.08em; text-transform:uppercase}
+  header span{color:var(--dim); font-size:12px}
+  main{max-width:1000px; margin:0 auto; padding:24px 32px}
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px}
+  button{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    font:inherit; font-size:13px; padding:9px 18px; cursor:pointer;
+    letter-spacing:.03em; transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:var(--accent); background:#1e1e1e}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.4; cursor:default}
+  #fileInput{display:none}
+  #status{color:var(--dim); font-size:12px; min-height:20px; margin-bottom:14px}
+  .summary{display:flex; gap:28px; flex-wrap:wrap; padding:16px 20px;
+    background:var(--panel); border:1px solid var(--line); margin-bottom:20px}
+  .summary div b{display:block; font-size:20px; font-weight:600}
+  .summary div small{color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.08em}
+  details{border:1px solid var(--line); background:var(--panel); margin-bottom:10px}
+  summary{
+    padding:12px 16px; cursor:pointer; user-select:none; font-size:13px;
+    display:flex; align-items:center; gap:10px; list-style:none;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary:hover{background:var(--panel2)}
+  .count{color:var(--dim); font-size:11px; margin-left:auto}
+  .body{padding:4px 16px 16px; border-top:1px solid var(--line)}
+  .entry{
+    padding:10px 12px; margin:8px 0; background:var(--panel2);
+    border-left:2px solid var(--dimmer); word-break:break-all; font-size:12.5px;
+  }
+  .entry .k{color:var(--accent); font-weight:600}
+  .entry .type{color:var(--dim); font-size:11px}
+  .entry pre{
+    margin-top:6px; color:var(--dim); white-space:pre-wrap;
+    font:11.5px/1.5 inherit; max-height:180px; overflow:auto;
+  }
+  .empty{color:var(--dimmer); font-size:12px; padding:8px 0}
+  .warn{color:var(--dim); font-size:12px; padding:12px; border:1px dashed var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <span>Центр востановления HENCORE OS Portable</span>
+</header>
+<main>
+  <div class="toolbar">
+    <button id="btnScan">Дамп диска</button>
+    <button id="btnExport">Сохранить дамп</button>
+    <button id="btnImport">Востановить систему из файла</button>
+    <input type="file" id="fileInput" accept=".json,application/json">
+  </div>
+  <div id="status"></div>
+  <div class="summary" id="summary" hidden>
+    <div><b id="stLS">—</b><small>Настроек системы</small></div>
+    <div><b id="stDB">—</b><small>разделов диска</small></div>
+    <div><b id="stStores">—</b><small>хранилищ</small></div>
+    <div><b id="stRecs">—</b><small>записей</small></div>
+  </div>
+    <div id="output"><div class="empty"> </div></div>
+</div>
+</main>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const statusEl = $('status'), output = $('output');
+let currentDump = null;
+
+const say = (msg, busy) => { statusEl.textContent = msg || ''; };
+
+function bytesToBase64(buffer){
+  const bytes = new Uint8Array(buffer);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function base64ToBytes(b64){
+  const bin = atob(b64), bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+const TYPED = {
+  Int8Array, Uint8Array, Uint8ClampedArray, Int16Array, Uint16Array,
+  Int32Array, Uint32Array, Float32Array, Float64Array, BigInt64Array, BigUint64Array
+};
+
+async function serialize(value, seen = new WeakSet()){
+  if (value === null || ['string','number','boolean','undefined'].includes(typeof value)) return value;
+  if (typeof value === 'bigint') return { __t:'bigint', v:value.toString() };
+  if (value instanceof Date) return { __t:'date', v:value.toISOString() };
+  if (value instanceof RegExp) return { __t:'regexp', v:value.toString() };
+  if (value instanceof ArrayBuffer) return { __t:'arraybuffer', b64:bytesToBase64(value) };
+  if (ArrayBuffer.isView(value)){
+    const slice = value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+    return { __t: value instanceof DataView ? 'DataView' : value.constructor.name, b64: bytesToBase64(slice) };
+  }
+  if (value instanceof Blob){
+    const buf = await value.arrayBuffer();
+    const rec = { __t:'blob', mime:value.type || '', size:value.size, b64:bytesToBase64(buf) };
+    if (value instanceof File){ rec.__t='file'; rec.name=value.name; rec.lastModified=value.lastModified; }
+    return rec;
+  }
+  if (typeof value === 'object'){
+    if (seen.has(value)) return { __t:'circular' };
+    seen.add(value);
+    const out = Array.isArray(value) ? [] : {};
+    for (const k of Object.keys(value)) out[k] = await serialize(value[k], seen);
+    seen.delete(value);
+    return out;
+  }
+  return String(value); 
+}
+
+function deserialize(v){
+  if (!v || typeof v !== 'object') return v;
+  if (Array.isArray(v)) return v.map(deserialize);
+  switch (v.__t){
+    case 'bigint': return BigInt(v.v);
+    case 'date': return new Date(v.v);
+    case 'regexp': { const m = v.v.match(/^\/([\s\S]*)\/([a-z]*)$/); return m ? new RegExp(m[1], m[2]) : null; }
+    case 'blob': return new Blob([base64ToBytes(v.b64)], { type:v.mime || '' });
+    case 'file': return new File([base64ToBytes(v.b64)], v.name || 'file',
+      { type:v.mime || '', lastModified:v.lastModified || 0 });
+    case 'arraybuffer': return base64ToBytes(v.b64).buffer;
+    case 'DataView': return new DataView(base64ToBytes(v.b64).buffer);
+  }
+  if (TYPED[v.__t]) return new TYPED[v.__t](base64ToBytes(v.b64).buffer);
+  if (v.__t === 'circular') return undefined;
+  const out = {};
+  for (const k in v) out[k] = deserialize(v[k]);
+  return out;
+}
+
+function openDB(name, version){
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(name, version);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+    req.onblocked = () => rej(new Error('База ' + name + ' заблокирована другим соединением'));
+  });
+}
+
+function readStoreRaw(store){
+  return new Promise((res, rej) => {
+    const req = store.openCursor(), recs = [];
+    req.onsuccess = e => { 
+      const c = e.target.result;
+      if (!c) return res(recs);
+      recs.push({ key:c.key, value:c.value });
+      c.continue();
+    };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+const txDone = tx => new Promise((res, rej) => {
+  tx.oncomplete = res; tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
+});
+
+async function dumpIndexedDB(){
+  let names = [];
+  if (typeof indexedDB.databases === 'function'){
+    names = (await indexedDB.databases()).map(d => d.name).filter(n => n != null);
+  } else {
+    say('Внимание: indexedDB.databases() не поддерживается этим браузером — показаны только localStorage.');
+    return [];
+  }
+  const dbs = [];
+  for (const name of names){
+    const db = await openDB(name);
+    const stores = [];
+    for (const stName of db.objectStoreNames){
+      const store = db.transaction(stName, 'readonly').objectStore(stName);
+      const indexes = Array.from(store.indexNames).map(n => {
+        const idx = store.index(n);
+        return { name:n, keyPath:idx.keyPath, unique:idx.unique, multiEntry:idx.multiEntry };
+      });
+      const raw = await readStoreRaw(store);
+      const records = [];
+      for (const r of raw) 
+        records.push({ key: await serialize(r.key), value: await serialize(r.value) });
+      stores.push({
+        name: stName, keyPath: store.keyPath ?? null,
+        autoIncrement: !!store.autoIncrement, indexes, records
+      });
+    }
+    dbs.push({ name, version: db.version, stores });
+    db.close();
+  }
+  return dbs;
+}
+
+async function makeDump(){
+  const ls = {};
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    ls[k] = localStorage.getItem(k);
+  }
+  const dbs = await dumpIndexedDB();
+  return {
+    meta: {
+      format: 'storage-fingerprint', version: 1,
+      created: new Date().toISOString(),
+      origin: location.origin === 'null' ? 'file://' : location.origin,
+      userAgent: navigator.userAgent
+    },
+    localStorage: ls,
+    indexedDB: dbs
+  };
+}
+
+function restoreLocalStorage(ls){
+  localStorage.clear();
+  for (const k of Object.keys(ls || {})) localStorage.setItem(k, String(ls[k]));
+}
+
+async function restoreIndexedDB(dbs){
+  for (const info of dbs || []){
+    await new Promise((res, rej) => {
+      const del = indexedDB.deleteDatabase(info.name); 
+      del.onsuccess = del.onerror = del.onblocked = () => {
+        const req = indexedDB.open(info.name, Math.max(1, info.version || 1));
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          for (const st of info.stores || []){
+            if (db.objectStoreNames.contains(st.name)) continue;
+            const store = db.createObjectStore(st.name, {
+              keyPath: st.keyPath ?? undefined,
+              autoIncrement: !!st.autoIncrement
+            });
+            for (const idx of st.indexes || [])
+              store.createIndex(idx.name, idx.keyPath, { unique: !!idx.unique, multiEntry: !!idx.multiEntry });
+          }
+        };
+        req.onsuccess = async () => {
+          const db = req.result;
+          try {
+            for (const st of info.stores || []){
+              if (!db.objectStoreNames.contains(st.name)) continue;
+              const tx = db.transaction(st.name, 'readwrite');
+              const store = tx.objectStore(st.name);
+              for (const r of st.records || []){
+                const value = deserialize(r.value);
+                try {
+                  if (st.keyPath) store.put(value);           
+                  else store.put(value, deserialize(r.key));  
+                } catch (e){ console.warn('Запись пропущена:', e); }
+              }
+              await txDone(tx);
+            }
+            db.close(); res();
+          } catch (e){ rej(e); }
+        };
+        req.onerror = () => rej(req.error);
+      };
+    });
+  }
+}
+
+function fmtSize(n){
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n/1024).toFixed(1) + ' KB';
+  return (n/1048576).toFixed(1) + ' MB';
+}
+function preview(value){
+  if (value && typeof value === 'object' && value.__t === 'blob')
+    return '⟨Blob⟩ ' + (value.mime || '—') + ', ' + fmtSize(value.size);
+  if (value && typeof value === 'object' && value.__t === 'file')
+    return '⟨File⟩ ' + value.name + ', ' + (value.mime || '—') + ', ' + fmtSize(value.size);
+  let s;
+  try { s = JSON.stringify(value); } catch(e){ s = String(value); }
+  return s && s.length > 400 ? s.slice(0, 400) + ' …' : s;
+}
+function entry(key, value){
+  const div = document.createElement('div'); div.className = 'entry';
+  const t = value && typeof value === 'object' && (value.__t === 'blob' || value.__t === 'file');
+  div.innerHTML = '<span class="k"></span> <span class="type"></span><pre></pre>';
+  div.querySelector('.k').textContent = key === null ? '⟨null⟩' : String(key);
+  div.querySelector('.type').textContent = t ? '[' + value.__t.toUpperCase() + ']' : '';
+  div.querySelector('pre').textContent = preview(value);
+  return div;
+}
+function render(dump){
+  output.textContent = '';
+  let totalRecs = 0, totalStores = 0;
+  const secLS = document.createElement('details');
+  const lsKeys = Object.keys(dump.localStorage || {});
+  secLS.innerHTML = '<summary>localStorage <span class="count"></span></summary><div class="body"></div>';
+  secLS.querySelector('.count').textContent = lsKeys.length + ' ключей';
+  const lsBody = secLS.querySelector('.body');
+  if (!lsKeys.length) lsBody.innerHTML = '<div class="empty">пусто</div>';
+  for (const k of lsKeys){
+    const e = entry(k, dump.localStorage[k]);
+    e.querySelector('.k').textContent = '"' + k + '"';
+    lsBody.appendChild(e);
+  }
+  output.appendChild(secLS);
+
+  for (const db of dump.indexedDB || []){
+    const dDb = document.createElement('details');
+    dDb.innerHTML = '<summary>IndexedDB ▸ <b></b> <span class="count"></span></summary><div class="body"></div>';
+    dDb.querySelector('b').textContent = db.name;
+    const dbBody = dDb.querySelector('.body');
+    const recInDb = db.stores.reduce((s, st) => s + st.records.length, 0);
+    totalRecs += recInDb; totalStores += db.stores.length;
+    dDb.querySelector('.count').textContent = db.stores.length + ' хранилищ, ' + recInDb + ' записей, версия ' + db.version;
+    if (!db.stores.length) dbBody.innerHTML = '<div class="empty">нет хранилищ</div>';
+    for (const st of db.stores){
+      const dSt = document.createElement('details');
+      const idxInfo = st.indexes.length ? ', индексы: ' + st.indexes.map(i => i.name).join(', ') : '';
+      dSt.innerHTML = '<summary><b></b> <span class="count"></span></summary><div class="body"></div>';
+      dSt.querySelector('b').textContent = st.name;
+      dSt.querySelector('.count').textContent = st.records.length + ' записей' + idxInfo;
+      const stBody = dSt.querySelector('.body');
+      if (!st.records.length) stBody.innerHTML = '<div class="empty">пусто</div>';
+      for (const r of st.records) stBody.appendChild(entry(r.key, r.value));
+      dbBody.appendChild(dSt);
+    }
+    output.appendChild(dDb);
+  }
+  $('summary').hidden = false;
+  $('stLS').textContent = lsKeys.length;
+  $('stDB').textContent = (dump.indexedDB || []).length;
+  $('stStores').textContent = totalStores;
+  $('stRecs').textContent = totalRecs;
+}
+
+$('btnScan').addEventListener('click', async () => {
+  say('Сканирую…', true);
+  try {
+    currentDump = await makeDump();
+    render(currentDump);
+    say('Готово: ' + new Date().toLocaleTimeString());
+  } catch (e){ say('Ошибка: ' + e.message); console.error(e); }
+});
+
+$('btnExport').addEventListener('click', () => {
+  if (!currentDump){ say('Сначала сделайте дамп.'); return; }
+  const blob = new Blob([JSON.stringify(currentDump, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
+  a.href = URL.createObjectURL(blob);
+  a.download = 'HENCORE.OS.DATA' + ts + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  say('Экспортировано.');
+});
+
+$('btnImport').addEventListener('click', () => $('fileInput').click());
+
+$('fileInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.meta?.format !== 'storage-fingerprint') throw new Error('не тот формат файла');
+    if (!confirm('Восстановить ' + Object.keys(data.localStorage || {}).length +
+        ' настроек системы и ' + (data.indexedDB || []).length +
+        ' разделов диска? Существующие базы будут пересозданы.')) return;
+    say('Восстанавливаю…');
+    restoreLocalStorage(data.localStorage);
+    await restoreIndexedDB(data.indexedDB);
+    say('Импорт завершён. Обновляю дамп…');
+    currentDump = await makeDump();
+    render(currentDump);
+    say('Готово: ' + new Date().toLocaleTimeString());
+  } catch (err){ say('Ошибка импорта: ' + err.message); console.error(err); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Шифрование текста — AES-256-GCM</title>
+<style>
+  :root {
+    —bg: #f4f6fa;
+    —card: #ffffff;
+    —accent: #4f6ef7;
+    —accent-dark: #3a54d4;
+    —danger: #e5484d;
+    —text: #f0f0f0;
+    —muted: #6b7280;
+    —border: #dfe3ec;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 640px;
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(31, 36, 48, 0.08);
+    padding: 28px;
+    height: fit-content;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 6px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 20px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 14px 0 6px;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #fafbfd;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { min-height: 140px; resize: vertical; }
+  .row {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  button {
+    flex: 1;
+    min-width: 130px;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+  }
+  button:active { transform: scale(0.98); }
+  .btn-encrypt { background: var(--accent); color: #fff; }
+  .btn-encrypt:hover { background: var(--accent-dark); }
+  .btn-decrypt { background: #eef1fb; color: var(--accent); border: 1px solid #d6ddf8; }
+  .btn-decrypt:hover { background: #e2e8fa; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    flex: 0;
+    min-width: auto;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--muted); }
+  .message {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    display: none;
+  }
+  .message.ok    { display: block; background: #e8f7ee; color: #1c7c3c; }
+  .message.error { display: block; background: #fdecec; color: var(--danger); }
+  .hint {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <label style="    color: #f0f0f0;" for="password">Пароль</label>
+  <input type="text" id="password" placeholder="Придумайте пароль" autocomplete="off">
+
+  <label style="    color: #f0f0f0;" for="text">Текст</label>
+  <textarea id="text" placeholder="Введите или вставьте текст здесь…"></textarea>
+
+  <div class="row">
+    <button class="btn-decrypt" onclick="encrypt()">Зашифровать</button>
+    <button class="btn-decrypt" onclick="decrypt()">Расшифровать</button>
+    <button class="btn-decrypt" onclick="copyResult()" title="Скопировать результат">Копировать</button>
+    <button class="btn-decrypt" onclick="clearAll()" title="Очистить">Очистить</button>
+  </div>
+
+  <div id="message" class="message"></div>
+
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+function showMessage(text, ok) {
+  const el = $("message");
+  el.textContent = text;
+  el.className = "message " + (ok ? "ok" : "error");
+}
+
+// Перевод строки <-> байты
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+// Base64 <-> байты (unicode-safe)
+function bytesToB64(bytes) {
+  let bin = "";
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+// Пароль -> ключ AES-256 (PBKDF2, 200 000 итераций)
+async function deriveKey(password, saltBytes) {
+  const baseKey = await crypto.subtle.importKey(
+    "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: saltBytes,
+      iterations: 200000,
+      hash: "SHA-256"
+    },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encrypt() {
+  const password = $("password").value;
+  const text = $("text").value;
+
+  if (!password) return showMessage("Введите пароль.", false);
+  if (!text)     return showMessage("Введите текст для шифрования.", false);
+
+  try {
+    // Соль (16 байт) и IV (12 байт) генерируем заново на каждый вызов
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv   = crypto.getRandomValues(new Uint8Array(12));
+
+    const key = await deriveKey(password, salt);
+    const cipher = new Uint8Array(await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv }, key, enc.encode(text)
+    ));
+
+    // Формат: [соль (16) | IV (12) | шифротекст] -> Base64
+    const result = new Uint8Array(16 + 12 + cipher.length);
+    result.set(salt, 0);
+    result.set(iv, 16);
+    result.set(cipher, 28);
+
+    $("text").value = bytesToB64(result);
+    showMessage("✅ Текст зашифрован.", true);
+  } catch (e) {
+    showMessage("Ошибка шифрования: " + e.message, false);
+  }
+}
+
+async function decrypt() {
+  const password = $("password").value;
+  const input = $("text").value.trim();
+
+  if (!password) return showMessage("Введите пароль.", false);
+  if (!input)    return showMessage("Вставьте зашифрованный текст.", false);
+
+  try {
+    const data = b64ToBytes(input);
+    if (data.length < 29) return showMessage("Это не похоже на зашифрованное сообщение.", false);
+
+    const salt = data.slice(0, 16);
+    const iv   = data.slice(16, 28);
+    const cipher = data.slice(28);
+
+    const key = await deriveKey(password, salt);
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
+
+    $("text").value = dec.decode(plain);
+    showMessage("✅ Текст расшифрован.", true);
+  } catch {
+    // Невалидный Base64, чужая строка или неверный пароль — GCM их не различает
+    showMessage("Не удалось расшифровать: неверный пароль или повреждённые данные.", false);
+  }
+}
+
+async function copyResult() {
+  try {
+    await navigator.clipboard.writeText($("text").value);
+    showMessage("Результат скопирован в буфер обмена.", true);
+  } catch {
+    showMessage("Не удалось скопировать — выделите текст вручную.", false);
+  }
+}
+
+function clearAll() {
+  $("text").value = "";
+  $("password").value = "";
+  $("message").className = "message";
+}
+</script>
+</body>
+</html>
