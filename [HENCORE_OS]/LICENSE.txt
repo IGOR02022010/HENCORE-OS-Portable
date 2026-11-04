@@ -1,0 +1,131 @@
+HENCORE OS Portable - Open Source License (Version 2.0)
+
+Copyright (c) 2026 Igor, known as IGOR02022010
+Contact: igor98557@yandex.ru
+Country of residence: Russian Federation
+(hereinafter the "Author" or the "Copyright Holder").
+
+1. DEFINITIONS
+
+1.1. "Software" means HENCORE OS Portable, including its source code,
+     binaries, documentation, and associated files, as originally made
+     available by the Author under this License.
+
+1.2. "Derivative Work" means a work that is based upon the Software or
+     upon a part of the Software and incorporates all or a substantial
+     portion of it. Mere aggregation of the Software with another
+     independent work on the same storage medium or the same system,
+     without modification of the Software itself, is not a Derivative
+     Work.
+
+1.3. "Distribution" means making copies of the Software or of a
+     Derivative Work available to third parties in any form, whether
+     by publication (including over a network), by transfer of media,
+     or by embedding in a product. Use of the Software within a single
+     organization or by its employees, contractors and affiliates
+     (including modifications that are never published) is NOT a
+     Distribution and carries no attribution obligations.
+
+2. GRANT OF LICENSE
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this Software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, study, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+subject to the following conditions:
+
+   a) The above copyright notice, this permission notice, and the
+      original name of the project ("HENCORE OS Portable") shall be
+      included in all copies or substantial portions of the Software.
+
+   b) Any Derivative Work that is Distributed to third parties MUST:
+
+      i.  retain the original copyright notice: "Copyright (c) 2026
+          Igor (IGOR02022010)";
+
+      ii. retain this License, or include a copy of the current
+          version of this License together with the Derivative Work,
+          without removing or altering any of its terms;
+
+      iii. clearly indicate in a visible location (for example, the
+          README file, the "About" section, or a source file header)
+          that the original work is HENCORE OS Portable by Igor
+          (IGOR02022010), and briefly describe the changes made to
+          the original Software. A link to the original project,
+          where available, is sufficient for this purpose.
+
+   c) Nothing in this License restricts the right to sell copies of
+      the Software or a Derivative Work, or to use the Software in
+      commercial products and services.
+
+3. PATENTS
+
+To the extent that the Author owns or controls patent rights that are
+necessarily infringed by the Software as distributed by the Author,
+the Author grants every recipient of the Software a royalty-free,
+worldwide, non-exclusive license under such patent rights to make,
+use, sell and distribute the Software and Derivative Works. Nothing
+in this Section extends to patent claims of the recipient itself, and
+no patent license is granted for technology added by anyone other
+than the Author.
+
+4. ATTRIBUTION
+
+Modified or unmodified Distribution of the Software does not grant
+any right to claim authorship of the original work. The Author's
+copyright over the original Software remains fully in effect.
+Removal, alteration, or obscuring of the copyright notice or of the
+attribution required by this License is a material breach of this
+License.
+
+5. TERMINATION
+
+5.1. If a recipient fails to comply with any condition of this
+     License, the rights granted to that recipient under Section 2
+     are terminated automatically.
+
+5.2. If the breach is curable, the termination shall not take effect
+     if the recipient cures the breach within thirty (30) calendar
+     days from the date it was notified of it, whether by the Author
+     or otherwise, and does not repeat the breach within the
+     following three (3) years. Reinstatement is personal to the
+     recipient that cured the breach.
+
+6. DISCLAIMER OF WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+7. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER BE RESPONSIBLE OR
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT LIMITED TO LOSS OF DATA,
+LOSS OF PROFITS, SYSTEM FAILURE, HARDWARE DAMAGE, OR BUSINESS
+INTERRUPTION) CAUSED BY, RESULTING FROM, OR IN ANY WAY RELATED TO THE
+USE OR MISUSE OF THE SOFTWARE, EVEN IF THE AUTHOR HAS BEEN ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+
+8. GOVERNING LAW
+
+This License is governed by the laws of the Russian Federation. Any
+dispute arising out of or in connection with this License that cannot
+be resolved by negotiation shall be submitted to a competent court
+at the Author's place of residence within the Russian Federation,
+unless mandatory rules of the law applicable to the relationship
+provide otherwise.
+
+9. ACCEPTANCE
+
+By using, copying, modifying, or distributing this Software, the
+recipient expresses acceptance of all terms and conditions of this
+License.
+
+— End of License —

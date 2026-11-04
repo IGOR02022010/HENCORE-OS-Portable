@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="[SYSTEM]/Apps/assets/pwa21.png" type="image/x-icon">
+<title>HENCORE OS Portable</title>
+<link rel="stylesheet" href="[SYSTEM]/css/style.css">
+</head>
+<body>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1014">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<script>
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('SW.js').catch(function(){  });
+  });
+}
+</script>
+
+  <div id="desktop"></div>
+
+
+  <div id="startmenu" class="hidden">
+    <div class="sm-search">
+      <input type="text" id="sm-search-input" placeholder="Поиск приложений и игр...">
+    </div>
+    <div class="sm-label">Ваши приложения и игры:</div>
+    <div id="sm-grid" class="sm-grid"></div>
+    <div class="sm-footer">
+      <div class="sm-user">
+        <div class="sm-avatar">А</div>
+        <span>Администратор</span>
+      </div>
+      <button id="sm-power" title="Перезагрузить ПК"><img src="[SYSTEM]/Apps/assets/d_refresh.png" alt="ICON43" style="height: 23px; width: 23px; "></button>
+    </div>
+  </div>
+
+
+  <footer  id="taskbar"> 
+    <button id="startbtn" title="Пуск">
+      <span class="logo">
+        <span style="background: color-mix(in srgb, var(--accent) 75%, #000000);"></span>
+		<span></span>
+		<span style="background: color-mix(in srgb, var(--accent) 60%, #000000);"></span>
+		<span style="background: color-mix(in srgb, var(--accent) 75%, #000000);"></span>
+      </span>
+    </button>
+    <div id="taskitems"></div>
+    <div id="tray"><span id="clock"></span>
+  </footer>
+
+  <script src="[SYSTEM]/js/APPdata.js"></script>
+  <script src="[SYSTEM]/js/CONSTdata.js"></script>
+  <script src="[SYSTEM]/js/CoreOS.js"></script>
+  <script src="[SYSTEM]/js/AppInstll.js"></script>
+  <script src="[SYSTEM]/js/SHOWapps.js"></script>
+  <script src="[SYSTEM]/js/DESfolders.js"></script>
+  <script src="[SYSTEM]/js/WeatherWI.js"></script>
+</body>
+</html>

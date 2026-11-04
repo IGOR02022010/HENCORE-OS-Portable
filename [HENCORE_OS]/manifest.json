@@ -1,0 +1,14 @@
+{
+  "name": "HENCORE-OS-Portable",
+  "short_name": "HENCORE-OS",
+  "description": "(c) IGOR_02022010 [https://github.com/IGOR02022010/HENCORE-OS-Portable]",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f1014",
+  "theme_color": "#0f1014",
+  "lang": "ru",
+  "icons": [
+    { "src": "[SYSTEM]/PWAico/pwa128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "[SYSTEM]/PWAico/pwa521.png", "sizes": "521x521", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
