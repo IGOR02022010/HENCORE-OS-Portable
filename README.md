@@ -50,6 +50,7 @@
 |---|---|
 | 🗨 Автор проекта | <https://github.com/IGOR02022010> |
 | 🌐 Официальный сайт | <https://igor02022010.github.io/SOPS/> |
+| 🌐 Запустить в браузере | <https://igor02022010.github.io/HENCORE-OS-Portable/> |
 | 💾 Репозиторий | <https://github.com/IGOR02022010/HENCORE-OS-Portable> |
 
 ---
