@@ -5,7 +5,7 @@
 **Портативная операционная система в браузере**
 
 [![Статус](https://img.shields.io/badge/статус-активный%20проект-brightgreen)](https://github.com/IGOR02022010/HENCORE-OS-Portable)
-[![Сайт](https://img.shields.io/badge/сайт-официальный-blue)](https://igor02022010.github.io/SOPS/)
+[![Сайт](https://img.shields.io/badge/сайт-официальный-blue)](https://igor02022010.github.io/HENCORE-OS-Portable/)
 [![GitHub](https://img.shields.io/badge/репозиторий-GitHub-black)](https://github.com/IGOR02022010/HENCORE-OS-Portable)
 
 </div>
