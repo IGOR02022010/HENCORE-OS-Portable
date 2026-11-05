@@ -24,6 +24,7 @@
 ## 🚀 Запуск ОС
 
 Для запуска HENCORE OS Portable откройте файл **`index.html`**, расположенный в корне архива.
+Ну а если вам нажен подготовленный рабочий стол, то просто откройте  <https://github.com/IGOR02022010/HENCORE-OS-Portable/blob/main/HENCORE.OS.DATA2026-11-05-03-14-15.json>
 
 > 💡 **Подсказка:** просто дважды щёлкните по файлу — система откроется в браузере, установленном по умолчанию.
 
@@ -52,6 +53,7 @@
 | 🌐 Официальный сайт | <https://igor02022010.github.io/SOPS/> |
 | 🌐 Запустить в браузере | <https://igor02022010.github.io/HENCORE-OS-Portable/> |
 | 💾 Репозиторий | <https://github.com/IGOR02022010/HENCORE-OS-Portable> |
+| 🚀 Готовый рабочий стол | <https://github.com/IGOR02022010/HENCORE-OS-Portable/blob/main/HENCORE.OS.DATA2026-11-05-03-14-15.json> |
 
 ---
 
